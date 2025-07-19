@@ -20,6 +20,7 @@ from orchestrator import (
     run_seo_agent,
     run_research_agent,
     run_draft_writer_agent,
+    run_flow_editor_agent,
     process_content_piece,
     get_content_pieces_by_plan
 )
@@ -71,7 +72,7 @@ class TestContentPipeline(unittest.TestCase):
             "niche": "technology",
             "goal": "educate readers"
         }
-        plan_id = create_strategic_plan(plan_args)
+        plan_id = create_strategic_plan(mock_supabase, **plan_args)
         
         # Verify the plan was created
         mock_supabase.table.assert_called_once_with("strategic_plans")
@@ -91,11 +92,13 @@ class TestContentPipeline(unittest.TestCase):
         mock_get_supabase.return_value = mock_supabase
         
         # Call the function
-        result = run_seo_agent(self.mock_plan_id)
+        result = run_seo_agent(self.mock_plan_id, mock_supabase)
         
         # Verify the agent was run
         mock_subprocess.assert_called_once()
-        self.assertTrue(result)
+        self.assertIn("enhanced_seo_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("--plan-id", mock_subprocess.call_args[0][0][2])
+        self.assertIn(self.mock_plan_id, mock_subprocess.call_args[0][0][3])
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
@@ -106,10 +109,13 @@ class TestContentPipeline(unittest.TestCase):
         mock_subprocess.return_value.returncode = 0
         
         # Call the function
-        result = run_research_agent(self.mock_content_id)
+        result = run_research_agent(self.mock_content_id, MagicMock())
         
         # Verify the agent was run
         mock_subprocess.assert_called_once()
+        self.assertIn("research_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
+        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
 
     @patch("builtins.print")
@@ -121,38 +127,73 @@ class TestContentPipeline(unittest.TestCase):
         mock_subprocess.return_value.returncode = 0
         
         # Call the function
-        result = run_draft_writer_agent(self.mock_content_id)
+        result = run_draft_writer_agent(self.mock_content_id, MagicMock())
         
         # Verify the agent was run
         mock_subprocess.assert_called_once()
+        self.assertIn("draft_writer_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
+        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
+        self.assertTrue(result)
+
+    @patch("builtins.print")
+    @patch("orchestrator.get_supabase_client")
+    @patch("orchestrator.subprocess.run")
+    def test_run_flow_editor_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+        """Test running the flow editor agent."""
+        # Mock subprocess
+        mock_subprocess.return_value.returncode = 0
+        
+        # Call the function
+        result = run_flow_editor_agent(self.mock_content_id, MagicMock())
+        
+        # Verify the agent was run
+        mock_subprocess.assert_called_once()
+        self.assertIn("flow_editor_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
+        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
 
     @patch("builtins.print")
     @patch("orchestrator.run_research_agent")
     @patch("orchestrator.run_draft_writer_agent")
-    def test_process_content_piece(self, mock_draft_writer, mock_research, mock_print):
+    @patch("orchestrator.run_flow_editor_agent")
+    def test_process_content_piece(self, mock_flow_editor, mock_draft_writer, mock_research, mock_print):
         """Test processing a content piece through the pipeline."""
         # Mock agent results
         mock_research.return_value = True
         mock_draft_writer.return_value = True
+        mock_flow_editor.return_value = True
         
         # Setup content piece with different statuses to test each step
         content_piece_draft = {**self.mock_content_piece, "status": "draft"}
         content_piece_researched = {**self.mock_content_piece, "status": "researched"}
+        content_piece_written = {**self.mock_content_piece, "status": "written"}
         
         # Test processing a draft content piece
-        result_draft = process_content_piece(content_piece_draft, 1, 1)
-        mock_research.assert_called_once_with(self.mock_content_id)
+        result_draft = process_content_piece(content_piece_draft, MagicMock())
+        mock_research.assert_called_once_with(self.mock_content_id, MagicMock(), True)
         self.assertTrue(result_draft)
         
         # Reset mocks
         mock_research.reset_mock()
         mock_draft_writer.reset_mock()
+        mock_flow_editor.reset_mock()
         
         # Test processing a researched content piece
-        result_researched = process_content_piece(content_piece_researched, 1, 1)
-        mock_draft_writer.assert_called_once_with(self.mock_content_id)
+        result_researched = process_content_piece(content_piece_researched, MagicMock())
+        mock_draft_writer.assert_called_once_with(self.mock_content_id, MagicMock(), True)
         self.assertTrue(result_researched)
+        
+        # Reset mocks
+        mock_research.reset_mock()
+        mock_draft_writer.reset_mock()
+        mock_flow_editor.reset_mock()
+        
+        # Test processing a written content piece
+        result_written = process_content_piece(content_piece_written, MagicMock())
+        mock_flow_editor.assert_called_once_with(self.mock_content_id, MagicMock(), True)
+        self.assertTrue(result_written)
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
