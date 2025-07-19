@@ -1,0 +1,26 @@
+# Core dependencies
+supabase==1.0.3
+openai==1.3.0
+pydantic==2.4.2
+python-dotenv==1.0.0
+
+# Web framework (for API endpoints)
+fastapi==0.103.1
+uvicorn==0.23.2
+
+# Testing
+pytest==7.4.0
+pytest-cov==4.1.0
+
+# Utilities
+requests==2.31.0
+python-slugify==8.0.1
+tenacity==8.2.3  # For retries
+tiktoken==0.5.1  # For token counting with OpenAI
+pandas==2.1.0    # For data processing
+pillow==10.0.0   # For image processing
+
+# Development tools
+black==23.7.0
+flake8==6.1.0
+isort==5.12.0
