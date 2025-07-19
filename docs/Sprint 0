@@ -1,0 +1,112 @@
+# 🛠 Sprint 0 Documentation
+
+**Project:** Autonomous Content Generation System
+**Sprint Duration:** 1 week (5 working days)
+**Sprint Type:** Scaffolding & Environment Setup
+**Sprint Goal:** Establish a stable foundation for agent development, orchestrator logic, Supabase integration, and development workflows.
+
+---
+
+## 📌 Sprint Objectives
+
+Sprint 0 is focused on:
+
+1. Scaffolding the system architecture
+2. Establishing the project structure for agent-based development
+3. Deploying the initial infrastructure (frontend, backend, DB)
+4. Creating a minimal orchestrator prototype
+5. Aligning team standards, naming conventions, and interfaces
+
+This sprint is foundational. It sets up everything future agents and features will rely on.
+
+---
+
+## 🧱 Key Outcomes
+
+By the end of Sprint 0, we should have:
+
+* ✅ A deployed frontend scaffold on Vercel
+* ✅ A working Supabase project with schemas and auth
+* ✅ A Pocketbase Flow environment for agent orchestration
+* ✅ A functional task runner to trigger agent stubs
+* ✅ Codex agent dev environments configured
+* ✅ Shared `schemas` and `utils` libraries
+* ✅ Sample content record with pipeline-ready data
+* ✅ Basic developer docs (including `README.md`, `Agents.md`, and `Runbook.md`)
+
+---
+
+## 🔨 Stories and Tasks
+
+### 🧭 EPIC 1: Project Infrastructure Setup
+
+| ID       | Story                              | Description                                                                                                               |
+| -------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| INFRA-01 | **Initialize Supabase Project**    | Create Supabase project, set up auth, and provision tables for `strategic_plans`, `content_pieces`, `keywords`, etc.      |
+| INFRA-02 | **Deploy Vercel Scaffold**         | Create and deploy a Next.js app to Vercel with a placeholder dashboard UI. Include auth hook for Supabase.                |
+| INFRA-03 | **Set Up Pocketbase Flow**         | Deploy Pocketbase and create basic flows for agent task execution. Ensure ability to log, trigger, and track task status. |
+| INFRA-04 | **Create Agent Working Directory** | Scaffold `/agents` folder with one working stub (`seo-agent`) and shared libraries.                                       |
+| INFRA-05 | **Bootstrap Agent Runner**         | Build CLI tool or script to run agents locally using mock JSON inputs and validate outputs.                               |
+
+---
+
+### 📦 EPIC 2: Core Data Model Definition
+
+| ID      | Story                                 | Description                                                                                         |
+| ------- | ------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| DATA-01 | **Define Supabase Schemas**           | Create DB tables based on `PRD` specs. Include relational structure, foreign keys, and indexes.     |
+| DATA-02 | **Add Dev Seed Data**                 | Insert sample strategic plans, keyword clusters, and content drafts for local testing.              |
+| DATA-03 | **Define Shared Type Schemas**        | Implement TypeScript + Python shared types for agent interoperability. Include JSON schema exports. |
+| DATA-04 | **Create Agent I/O Schema Contracts** | Finalize and distribute standard `input/output/error/status` schema for agent tasks.                |
+
+---
+
+### ⚙️ EPIC 3: Agent Dev Tooling
+
+| ID        | Story                                 | Description                                                                                                                                  |
+| --------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| AGENTS-01 | **Implement `seo-agent` Stub**        | Create minimal `seo-agent/index.py` that accepts a keyword and returns a stubbed keyword cluster.                                            |
+| AGENTS-02 | **Create Agent Test Harness**         | Build a runner to test agents against local JSON files and snapshot outputs for review.                                                      |
+| AGENTS-03 | **Write `Agents.md` Doc**             | Define development conventions, naming, structure, and collaboration practices for Codex agents.                                             |
+| AGENTS-04 | **Setup `schemas.py` and `utils.py`** | Centralize shared logic and validation across agents in common modules.                                                                      |
+| AGENTS-05 | **Git Setup & CI**                    | Initialize repo, set up GitHub/CI workflows to lint, test, and deploy agents. Optional: add Dagger.dev or GitHub Actions pipeline for CI/CD. |
+
+---
+
+### 🔁 EPIC 4: Orchestrator MVP
+
+| ID      | Story                                    | Description                                                                                               |
+| ------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| ORCH-01 | **Create Orchestrator Function**         | Build a lightweight orchestrator that reads content pipeline stages and updates task status via Supabase. |
+| ORCH-02 | **Implement Agent Task Queue**           | Create initial task queue (FIFO or status-triggered). Allow tasks to be assigned and updated by agents.   |
+| ORCH-03 | **Wire Orchestrator to Pocketbase Flow** | Trigger agent execution via Pocketbase based on `task_ready` conditions.                                  |
+
+---
+
+## 🧪 Deliverables
+
+* `README.md`: Environment setup, database bootstrapping, dev flow
+* `Agents.md`: Full agent dev protocol
+* `schemas.py` / `schemas.ts`: Centralized I/O and DB types
+* `seo-agent`: First stub + test harness + sample input/output
+* `orchestrator.py`: Initial task manager and executor
+* `supabase.sql`: DDL file with schema definitions
+* Vercel + Supabase project links
+
+---
+
+## 📌 Stretch Goals
+
+* Vercel UI renders live status of each agent stage for a sample content piece
+* Runbook for local testing + orchestration simulation
+* Sample unit test framework for agent code
+
+---
+
+## 🧠 Notes for Dev Team
+
+* This is a **low-dependency** sprint—most work can be done in parallel.
+* Follow interface-driven development: stub the contract before implementing logic.
+* Don’t gold-plate the stubs. Focus on I/O shape and wiring first.
+* Validate Supabase and Pocketbase work independently *before* trying to connect them.
+
