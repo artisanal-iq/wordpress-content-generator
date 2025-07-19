@@ -1,0 +1,65 @@
+{
+  "plan_id": "e31d3cf8-406e-462c-b185-d1f47799de17",
+  "keywords": {
+    "focus_keyword": "best technology guide",
+    "supporting_keywords": [
+      "technology tips",
+      "technology for general audience",
+      "how to educate technology",
+      "informative advice on technology",
+      "technology best practices"
+    ],
+    "search_volume": {
+      "best technology guide": 1200,
+      "technology tips": 880,
+      "technology for general audience": 590,
+      "how to educate technology": 320,
+      "informative advice on technology": 210,
+      "technology best practices": 430
+    }
+  },
+  "content_ideas": [
+    {
+      "title": "The Ultimate Guide to Technology",
+      "focus_keyword": "best technology guide",
+      "description": "A comprehensive guide to technology for general audience.",
+      "estimated_word_count": 2500,
+      "suggested_sections": [
+        "Introduction to technology",
+        "Key Benefits of technology",
+        "How to Get Started with technology",
+        "Best Practices for technology",
+        "Case Studies",
+        "Conclusion"
+      ]
+    },
+    {
+      "title": "10 Essential Technology Tips for General Audience",
+      "focus_keyword": "technology tips",
+      "description": "Practical tips to help general audience with technology.",
+      "estimated_word_count": 1800,
+      "suggested_sections": [
+        "Why technology Matters",
+        "Tip 1: Getting Started",
+        "Tip 2: Optimizing Your Approach",
+        "Tip 3-10: Various Strategies",
+        "Implementation Guide"
+      ]
+    },
+    {
+      "title": "How to Educate Technology Like a Pro",
+      "focus_keyword": "how to educate technology",
+      "description": "Step-by-step guide to educate readers through technology.",
+      "estimated_word_count": 2200,
+      "suggested_sections": [
+        "Understanding technology",
+        "Step 1: Assessment",
+        "Step 2: Strategy Development",
+        "Step 3: Implementation",
+        "Step 4: Measurement",
+        "Success Stories"
+      ]
+    }
+  ],
+  "timestamp": "7507db24-05e2-4eac-9969-ca816c605c6d"
+}

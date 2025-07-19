@@ -1,0 +1,65 @@
+{
+  "plan_id": "84a5fe07-bdd0-4695-8fe8-031d45841e35",
+  "keywords": {
+    "focus_keyword": "best cloud computing guide",
+    "supporting_keywords": [
+      "cloud computing tips",
+      "cloud computing for tech professionals",
+      "how to educate cloud computing",
+      "professional advice on cloud computing",
+      "cloud computing best practices"
+    ],
+    "search_volume": {
+      "best cloud computing guide": 1200,
+      "cloud computing tips": 880,
+      "cloud computing for tech professionals": 590,
+      "how to educate cloud computing": 320,
+      "professional advice on cloud computing": 210,
+      "cloud computing best practices": 430
+    }
+  },
+  "content_ideas": [
+    {
+      "title": "The Ultimate Guide to Cloud Computing",
+      "focus_keyword": "best cloud computing guide",
+      "description": "A comprehensive guide to cloud computing for tech professionals.",
+      "estimated_word_count": 2500,
+      "suggested_sections": [
+        "Introduction to cloud computing",
+        "Key Benefits of cloud computing",
+        "How to Get Started with cloud computing",
+        "Best Practices for cloud computing",
+        "Case Studies",
+        "Conclusion"
+      ]
+    },
+    {
+      "title": "10 Essential Cloud Computing Tips for Tech Professionals",
+      "focus_keyword": "cloud computing tips",
+      "description": "Practical tips to help tech professionals with cloud computing.",
+      "estimated_word_count": 1800,
+      "suggested_sections": [
+        "Why cloud computing Matters",
+        "Tip 1: Getting Started",
+        "Tip 2: Optimizing Your Approach",
+        "Tip 3-10: Various Strategies",
+        "Implementation Guide"
+      ]
+    },
+    {
+      "title": "How to Educate Cloud Computing Like a Pro",
+      "focus_keyword": "how to educate cloud computing",
+      "description": "Step-by-step guide to educate about cloud security through cloud computing.",
+      "estimated_word_count": 2200,
+      "suggested_sections": [
+        "Understanding cloud computing",
+        "Step 1: Assessment",
+        "Step 2: Strategy Development",
+        "Step 3: Implementation",
+        "Step 4: Measurement",
+        "Success Stories"
+      ]
+    }
+  ],
+  "timestamp": "a6d7463f-c496-4c3f-b6d8-5535a2339445"
+}

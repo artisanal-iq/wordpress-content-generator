@@ -1,0 +1,37 @@
+{
+  "content_id": "25a52aa7-5240-4028-ba12-aed92b4ddc04",
+  "title": "The Ultimate Guide to Technology",
+  "research_points": [
+    {
+      "excerpt": "According to a recent study, 78% of general audience consider best technology guide to be essential for success.",
+      "url": "https://example.com/research-study",
+      "type": "statistic",
+      "confidence": 0.85
+    },
+    {
+      "excerpt": "'best technology guide represents a critical advancement in technology,' stated Dr. Jane Smith, a leading expert in the field.",
+      "url": "https://example.com/expert-interview",
+      "type": "quote",
+      "confidence": 0.9
+    },
+    {
+      "excerpt": "best technology guide refers to the systematic approach to implementing technology strategies that improve outcomes for general audience.",
+      "url": "https://example.com/glossary",
+      "type": "definition",
+      "confidence": 0.95
+    },
+    {
+      "excerpt": "In 2023, the technology industry grew by 24%, with best technology guide being a primary driver of this growth.",
+      "url": "https://example.com/industry-report",
+      "type": "fact",
+      "confidence": 0.88
+    },
+    {
+      "excerpt": "Company XYZ implemented best technology guide strategies and saw a 35% increase in engagement among general audience.",
+      "url": "https://example.com/case-study",
+      "type": "example",
+      "confidence": 0.82
+    }
+  ],
+  "timestamp": "2025-07-19T12:13:50.630584"
+}

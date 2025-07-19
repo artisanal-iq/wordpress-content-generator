@@ -1,0 +1,37 @@
+{
+  "content_id": "60228626-cb4c-49b6-99b3-526fdaa60c74",
+  "title": "Sample Content Piece for example.com",
+  "research_points": [
+    {
+      "excerpt": "According to a recent study, 78% of general audience consider sample keyword to be essential for success.",
+      "url": "https://example.com/research-study",
+      "type": "statistic",
+      "confidence": 0.85
+    },
+    {
+      "excerpt": "'sample keyword represents a critical advancement in technology,' stated Dr. Jane Smith, a leading expert in the field.",
+      "url": "https://example.com/expert-interview",
+      "type": "quote",
+      "confidence": 0.9
+    },
+    {
+      "excerpt": "sample keyword refers to the systematic approach to implementing technology strategies that improve outcomes for general audience.",
+      "url": "https://example.com/glossary",
+      "type": "definition",
+      "confidence": 0.95
+    },
+    {
+      "excerpt": "In 2023, the technology industry grew by 24%, with sample keyword being a primary driver of this growth.",
+      "url": "https://example.com/industry-report",
+      "type": "fact",
+      "confidence": 0.88
+    },
+    {
+      "excerpt": "Company XYZ implemented sample keyword strategies and saw a 35% increase in engagement among general audience.",
+      "url": "https://example.com/case-study",
+      "type": "example",
+      "confidence": 0.82
+    }
+  ],
+  "timestamp": "2025-07-19T12:11:24.530481"
+}

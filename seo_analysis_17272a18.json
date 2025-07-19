@@ -1,0 +1,65 @@
+{
+  "plan_id": "17272a18-2b8d-4fce-b277-affea6742866",
+  "keywords": {
+    "focus_keyword": "best weight training guide",
+    "supporting_keywords": [
+      "weight training tips",
+      "weight training for fitness enthusiasts",
+      "how to inspire weight training",
+      "motivational advice on weight training",
+      "weight training best practices"
+    ],
+    "search_volume": {
+      "best weight training guide": 1200,
+      "weight training tips": 880,
+      "weight training for fitness enthusiasts": 590,
+      "how to inspire weight training": 320,
+      "motivational advice on weight training": 210,
+      "weight training best practices": 430
+    }
+  },
+  "content_ideas": [
+    {
+      "title": "The Ultimate Guide to Weight Training",
+      "focus_keyword": "best weight training guide",
+      "description": "A comprehensive guide to weight training for fitness enthusiasts.",
+      "estimated_word_count": 2500,
+      "suggested_sections": [
+        "Introduction to weight training",
+        "Key Benefits of weight training",
+        "How to Get Started with weight training",
+        "Best Practices for weight training",
+        "Case Studies",
+        "Conclusion"
+      ]
+    },
+    {
+      "title": "10 Essential Weight Training Tips for Fitness Enthusiasts",
+      "focus_keyword": "weight training tips",
+      "description": "Practical tips to help fitness enthusiasts with weight training.",
+      "estimated_word_count": 1800,
+      "suggested_sections": [
+        "Why weight training Matters",
+        "Tip 1: Getting Started",
+        "Tip 2: Optimizing Your Approach",
+        "Tip 3-10: Various Strategies",
+        "Implementation Guide"
+      ]
+    },
+    {
+      "title": "How to Inspire Weight Training Like a Pro",
+      "focus_keyword": "how to inspire weight training",
+      "description": "Step-by-step guide to inspire and educate through weight training.",
+      "estimated_word_count": 2200,
+      "suggested_sections": [
+        "Understanding weight training",
+        "Step 1: Assessment",
+        "Step 2: Strategy Development",
+        "Step 3: Implementation",
+        "Step 4: Measurement",
+        "Success Stories"
+      ]
+    }
+  ],
+  "timestamp": "2025-07-19T12:29:01.999536"
+}

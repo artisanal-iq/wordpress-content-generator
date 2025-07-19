@@ -2,7 +2,7 @@
 
 An autonomous, agent-based system that plans, writes, edits, illustrates and publishes long-form, SEO-optimised articles directly to WordPress.
 
-> **Status:** Sprint 0 (scaffolding) – core structure finished, **OpenAI integration added**, first two production-ready agents (`enhanced_seo_agent.py`, `research_agent.py`) & new orchestrator pipeline operational.
+> **Status:** Sprint 0 (scaffolding) – core structure finished, **OpenAI integration added**, first three production-ready agents (`enhanced_seo_agent.py`, `research_agent.py`, `draft_writer_agent.py`) & new orchestrator pipeline operational.
 
 ---
 
@@ -56,6 +56,7 @@ Agents talk **only** through the database, never directly to each other.
 │   └── seo-agent/           # first working stub
 │   └── enhanced_seo_agent.py # AI-powered keyword & content ideation
 │   └── research_agent.py     # gathers citations & facts
+│   └── draft_writer_agent.py # turns research + keywords into full drafts
 ├── docs/                    # PRD, roadmap, sprint docs
 ├── tests/                   # pytest suites
 ├── supabase_schema.sql      # full DDL export
@@ -186,8 +187,9 @@ Flags worth noting:
 Internally the orchestrator:
 1. Kicks off **Enhanced SEO Agent** → stores keywords + drafts.  
 2. Spins up **Research Agent** per new draft.  
-3. Updates `agent_status` rows so the dashboard can show progress.  
-4. Retries failures up to `AGENT_MAX_RETRIES`.
+3. Runs **Draft Writer Agent** to generate complete article drafts.  
+4. Updates `agent_status` rows so the dashboard can show progress.  
+5. Retries failures up to `AGENT_MAX_RETRIES`.
 
 ---
 
