@@ -1,0 +1,276 @@
+# 🧾 Sprint 0 – Story List
+
+**Sprint Duration:** 5 days
+**Sprint Goal:** Scaffold infrastructure, agents, and workflow foundations
+
+---
+
+## ✅ EPIC 1: Project Infrastructure Setup
+
+---
+
+### 🔧 **INFRA-01 – Initialize Supabase Project**
+
+**Story:**
+As a developer, I want to create and configure a Supabase project so we have a centralized data store for all agents and orchestrator logic.
+
+**Acceptance Criteria:**
+
+* Supabase project created
+* Auth enabled (email-based)
+* Project URL and keys stored in `.env`
+
+**Tags:** `infra`, `backend`, `supabase`
+
+---
+
+### 🔧 **INFRA-02 – Deploy Vercel Scaffold**
+
+**Story:**
+As a developer, I want to deploy a basic Next.js frontend to Vercel so we can begin building the UI and developer tools dashboard.
+
+**Acceptance Criteria:**
+
+* Next.js app deployed with `/dashboard` route
+* Supabase client configured
+* Displays "Welcome" if logged in, or "Login" if not
+
+**Tags:** `frontend`, `vercel`, `auth`
+
+---
+
+### 🔧 **INFRA-03 – Set Up Pocketbase Flow**
+
+**Story:**
+As a developer, I want to stand up a local Pocketbase Flow instance so we can orchestrate agent workflows from a centralized logic layer.
+
+**Acceptance Criteria:**
+
+* Pocketbase deployed locally or remotely
+* Flow editor accessible
+* One dummy task flow created with test trigger
+
+**Tags:** `orchestration`, `pocketbase`, `infra`
+
+---
+
+### 🔧 **INFRA-04 – Create Agent Working Directory**
+
+**Story:**
+As a Codex dev, I want a structured `/agents` directory with one stub so I can follow naming and folder conventions while building new agents.
+
+**Acceptance Criteria:**
+
+* `/agents/seo-agent/index.py` exists
+* Shared `schemas.py` and `utils.py` modules created
+* Consistent naming across folders
+
+**Tags:** `agents`, `scaffolding`
+
+---
+
+### 🔧 **INFRA-05 – Bootstrap Agent Runner**
+
+**Story:**
+As a developer, I want to run agents with test inputs so I can test functionality before integrating with the orchestrator.
+
+**Acceptance Criteria:**
+
+* CLI or Python script: `run_agent.py agent_name input.json`
+* Reads input, returns JSON output
+* Sample inputs and outputs committed to repo
+
+**Tags:** `testing`, `scaffolding`, `CLI`
+
+---
+
+## 📦 EPIC 2: Core Data Model Definition
+
+---
+
+### 📐 **DATA-01 – Define Supabase Schemas**
+
+**Story:**
+As a backend developer, I want to define and deploy the schema so agents can store and query structured data.
+
+**Acceptance Criteria:**
+
+* Tables created: `strategic_plans`, `keywords`, `content_pieces`, `agent_status`, `images`, `sources`
+* Relationships and indexes in place
+* Schema exported as `supabase_schema.sql`
+
+**Tags:** `supabase`, `schema`, `backend`
+
+---
+
+### 📐 **DATA-02 – Add Dev Seed Data**
+
+**Story:**
+As a developer, I want some dummy content and keyword records in the DB so I can test agents without needing live data.
+
+**Acceptance Criteria:**
+
+* At least one `strategic_plan` record
+* One full pipeline test set (`content_piece`, `keywords`, etc.)
+* Insert script or seed SQL file
+
+**Tags:** `backend`, `testing`, `seeds`
+
+---
+
+### 📐 **DATA-03 – Define Shared Type Schemas**
+
+**Story:**
+As a Codex agent, I want access to a centralized schema so I can ensure consistent inputs and outputs across modules.
+
+**Acceptance Criteria:**
+
+* `schemas.py` or `schemas.ts` defines shared types
+* Includes: `AgentTask`, `KeywordCluster`, `ResearchCitation`, `ContentPiece`, etc.
+* Linted, documented, and imported by at least one agent
+
+**Tags:** `agents`, `typing`, `architecture`
+
+---
+
+### 📐 **DATA-04 – Create Agent I/O Schema Contracts**
+
+**Story:**
+As a team, we want all agents to follow a universal contract for input/output/error/status so orchestration is consistent and reliable.
+
+**Acceptance Criteria:**
+
+* Standard schema JSON created
+* Template file with boilerplate agent structure
+* Agreed-upon conventions published in `Agents.md`
+
+**Tags:** `protocol`, `orchestration`, `documentation`
+
+---
+
+## ⚙️ EPIC 3: Agent Dev Tooling
+
+---
+
+### 🧪 **AGENTS-01 – Implement seo-agent Stub**
+
+**Story:**
+As a Codex dev, I want a functioning `seo-agent` stub so I can validate the pipeline from strategy → keyword clusters.
+
+**Acceptance Criteria:**
+
+* Takes `domain` and `niche` as input
+* Returns dummy keyword clusters, internal link target
+* Logs output to stdout or file
+
+**Tags:** `agents`, `SEO`, `scaffolding`
+
+---
+
+### 🧪 **AGENTS-02 – Create Agent Test Harness**
+
+**Story:**
+As a developer, I want to test each agent locally using example inputs and outputs so I can debug without full orchestration setup.
+
+**Acceptance Criteria:**
+
+* CLI or script to run agent with `input.json`
+* Snapshot comparison or manual log output
+* Validates status = `done` or logs errors
+
+**Tags:** `testing`, `CLI`, `QA`
+
+---
+
+### 📄 **AGENTS-03 – Write Agents.md Doc**
+
+**Story:**
+As a tech lead, I want to document how agents should be built and interact so future development is fast and conflict-free.
+
+**Acceptance Criteria:**
+
+* Clear structure and naming conventions
+* Output contract documented
+* Inter-agent behavior and repo structure included
+
+**Tags:** `docs`, `collaboration`, `architecture`
+
+---
+
+### 📄 **AGENTS-04 – Setup schemas.py and utils.py**
+
+**Story:**
+As a developer, I want shared modules for schemas and utilities so agents can reuse code without duplication.
+
+**Acceptance Criteria:**
+
+* `schemas.py` includes shared types
+* `utils.py` includes common logic (slugify, validators, etc.)
+* Used by `seo-agent` and one other stub
+
+**Tags:** `refactor`, `shared`, `utils`
+
+---
+
+### 🔁 **AGENTS-05 – Git Setup & CI**
+
+**Story:**
+As a developer, I want Git and CI configured so the repo has basic linting, testing, and branching standards.
+
+**Acceptance Criteria:**
+
+* GitHub repo initialized
+* `.prettierrc`, `.eslintrc`, or Python linter
+* CI action: on PR → run tests and lint
+
+**Tags:** `devops`, `github`, `ci`
+
+---
+
+## 🔁 EPIC 4: Orchestrator MVP
+
+---
+
+### 🔗 **ORCH-01 – Create Orchestrator Function**
+
+**Story:**
+As a systems dev, I want a simple orchestrator that reads task queues and assigns agents to work in sequence.
+
+**Acceptance Criteria:**
+
+* Basic task loop or handler
+* Can move task from `queued → processing → done`
+* Agent triggers based on task type
+
+**Tags:** `orchestration`, `backend`
+
+---
+
+### 🔗 **ORCH-02 – Implement Agent Task Queue**
+
+**Story:**
+As a developer, I want a FIFO or conditional task queue so agent jobs can be managed sequentially or in parallel.
+
+**Acceptance Criteria:**
+
+* Tasks stored in `agent_status` table
+* Triggers agent execution
+* Logs execution history and errors
+
+**Tags:** `queue`, `workflow`, `backend`
+
+---
+
+### 🔗 **ORCH-03 – Wire Orchestrator to Pocketbase Flow**
+
+**Story:**
+As a systems integrator, I want to connect our orchestrator to Pocketbase Flow so we can visualize and control execution.
+
+**Acceptance Criteria:**
+
+* Trigger agent run when status is `ready`
+* Log status to Pocketbase
+* Show visual flow for 1 content piece
+
+**Tags:** `orchestration`, `integration`, `pocketbase`
+
