@@ -289,6 +289,41 @@ def run_line_editor_agent(content_id, supabase_client, use_ai=False):
         return False
 
 # --------------------------------------------------------------------------- #
+# Image-Generator Agent                                                       #
+# --------------------------------------------------------------------------- #
+
+def run_image_generator_agent(content_id, supabase_client, use_ai=False):
+    """
+    Run the Image-Generator agent for a given content piece.
+
+    Args:
+        content_id (str): Content piece UUID.
+        supabase_client: Supabase client (placeholder, reserved for future use).
+        use_ai (bool): Whether to call OpenAI (default True).
+    Returns:
+        bool: True on success, False on failure.
+    """
+    print(f"{BLUE}Running image generator agent for content: {content_id}{ENDC}")
+
+    cmd = ["python", "image_generator_agent.py", "--content-id", content_id]
+    if not use_ai:
+        cmd.append("--no-ai")
+
+    try:
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        if process.returncode != 0:
+            print(f"{RED}Image generator agent failed with code {process.returncode}{ENDC}")
+            print(f"{RED}Error: {process.stderr}{ENDC}")
+            return False
+
+        print(f"{GREEN}Image generator agent completed successfully{ENDC}")
+        return True
+
+    except Exception as e:
+        print(f"{RED}Error running image generator agent: {e}{ENDC}")
+        return False
+
+# --------------------------------------------------------------------------- #
 # Content Piece Processor                                                     #
 # --------------------------------------------------------------------------- #
 
@@ -305,6 +340,7 @@ def process_content_piece(
         - status == "researched" -> run draft-writer agent
         - status == "written"    -> run flow-editor agent
         - status == "flow_edited" -> run line-editor agent
+        - status == "line_edited" -> run image-generator agent
 
     Args:
         content_piece: Row dict from `content_pieces` table.
@@ -327,6 +363,8 @@ def process_content_piece(
         return run_flow_editor_agent(cid, supabase_client, use_ai)
     elif status == "flow_edited":
         return run_line_editor_agent(cid, supabase_client, use_ai)
+    elif status == "line_edited":
+        return run_image_generator_agent(cid, supabase_client, use_ai)
     else:
         # Unknown or already processed status – nothing to do
         print(
@@ -452,6 +490,19 @@ def full_pipeline(args):
         if i < len(content_pieces) - 1:
             time.sleep(1)
 
+    # Step 6: Run the image generator agent for each content piece
+    print(f"{BOLD}Step 6: Running Image Generator Agent for {len(content_pieces)} content pieces{ENDC}")
+
+    image_success_count = 0
+    for i, content_id in enumerate(content_pieces):
+        print(f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Image Generator Agent{ENDC}")
+
+        if run_image_generator_agent(content_id, supabase_client, not args.no_ai):
+            image_success_count += 1
+
+        if i < len(content_pieces) - 1:
+            time.sleep(1)
+
     # Summary
     print("\n" + "=" * 60)
     print(f"{BOLD}Pipeline Summary:{ENDC}")
@@ -461,6 +512,7 @@ def full_pipeline(args):
     print(f"Draft Writing: {draft_success_count} of {len(content_pieces)} completed")
     print(f"Flow Editing: {flow_success_count} of {len(content_pieces)} completed")
     print(f"Line Editing: {line_success_count} of {len(content_pieces)} completed")
+    print(f"Image Generation: {image_success_count} of {len(content_pieces)} completed")
     
     return 0
 
