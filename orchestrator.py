@@ -213,6 +213,51 @@ def run_image_generator_agent(content_id, supabase_client, use_ai=False):
         return False
 
 # --------------------------------------------------------------------------- #
+# WordPress Publisher Agent                                                   #
+# --------------------------------------------------------------------------- #
+
+def run_wordpress_publisher_agent(
+    content_id,
+    supabase_client,
+    use_ai: bool = False,
+    preview: bool = False,
+):
+    """
+    Run the WordPress Publisher agent for a given content piece.
+
+    Args:
+        content_id (str): Content piece UUID.
+        supabase_client: Supabase client (placeholder, reserved for future use).
+        use_ai (bool): Currently unused, included for interface parity.
+        preview (bool): If True, run agent in preview‐only mode.
+    Returns:
+        bool: True on success, False on failure.
+    """
+    print(f"{BLUE}Running WordPress publisher agent for content: {content_id}{ENDC}")
+
+    cmd = ["python", "wordpress_publisher_agent.py", "--content-id", content_id]
+
+    # --no-ai flag is not relevant here but keep param for future parity
+    if preview:
+        cmd.append("--preview")
+
+    try:
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        if process.returncode != 0:
+            print(
+                f"{RED}WordPress publisher agent failed with code {process.returncode}{ENDC}"
+            )
+            print(f"{RED}Error: {process.stderr}{ENDC}")
+            return False
+
+        print(f"{GREEN}WordPress publisher agent completed successfully{ENDC}")
+        return True
+
+    except Exception as e:
+        print(f"{RED}Error running WordPress publisher agent: {e}{ENDC}")
+        return False
+
+# --------------------------------------------------------------------------- #
 # Line-Editor Agent                                                           #
 # --------------------------------------------------------------------------- #
 
@@ -325,6 +370,9 @@ def process_content_piece(
         return run_line_editor_agent(cid, supabase_client, use_ai)
     elif status == "line_edited":
         return run_image_generator_agent(cid, supabase_client, use_ai)
+    elif status == "image_generated":
+        # By default we publish immediately without preview mode.
+        return run_wordpress_publisher_agent(cid, supabase_client, use_ai, preview=False)
     else:
         # Unknown or already processed status – nothing to do
         print(
@@ -471,6 +519,21 @@ def full_pipeline(args):
         if i < len(content_pieces) - 1:
             time.sleep(1)
 
+    # Step 7: Run the WordPress publisher agent for each content piece
+    print(f"{BOLD}Step 7: Running WordPress Publisher Agent for {len(content_pieces)} content pieces{ENDC}")
+
+    publish_success_count = 0
+    for i, content_id in enumerate(content_pieces):
+        print(
+            f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with WordPress Publisher Agent{ENDC}"
+        )
+
+        if run_wordpress_publisher_agent(content_id, supabase_client, not args.no_ai):
+            publish_success_count += 1
+
+        if i < len(content_pieces) - 1:
+            time.sleep(1)
+
     # Summary
     print("\n" + "=" * 60)
     print(f"{BOLD}Pipeline Summary:{ENDC}")
@@ -481,6 +544,9 @@ def full_pipeline(args):
     print(f"Flow Editing: {flow_success_count} of {len(content_pieces)} completed")
     print(f"Line Editing: {line_success_count} of {len(content_pieces)} completed")
     print(f"Image Generation: {image_success_count} of {len(content_pieces)} completed")
+    print(
+        f"WordPress Publishing: {publish_success_count} of {len(content_pieces)} completed"
+    )
     
     return 0
 

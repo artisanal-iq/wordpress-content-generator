@@ -23,6 +23,7 @@ from orchestrator import (
     run_flow_editor_agent,
     run_line_editor_agent,
     run_image_generator_agent,
+    run_wordpress_publisher_agent,  # Added this import
     process_content_piece,
     get_content_pieces_by_plan
 )
@@ -141,9 +142,32 @@ class TestContentPipeline(unittest.TestCase):
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
     @patch("orchestrator.subprocess.run")
+    def test_run_wordpress_publisher_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+        """Test running the WordPress publisher agent."""
+        # Mock subprocess
+        mock_subprocess.return_value.returncode = 0
+        
+        # Call the function
+        result = run_wordpress_publisher_agent(self.mock_content_id, MagicMock())
+        
+        # Verify the agent was run
+        mock_subprocess.assert_called_once()
+        self.assertIn("wordpress_publisher_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
+        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
+        self.assertTrue(result)
+        
+        # Test with preview flag
+        mock_subprocess.reset_mock()
+        result = run_wordpress_publisher_agent(self.mock_content_id, MagicMock(), preview=True)
+        self.assertIn("--preview", mock_subprocess.call_args[0][0])
+        self.assertTrue(result)
+
+    @patch("builtins.print")
+    @patch("orchestrator.get_supabase_client")
+    @patch("orchestrator.subprocess.run")
     def test_run_draft_writer_agent(self, mock_subprocess, mock_get_supabase, mock_print):
         """Test running the draft writer agent."""
-    @patch("orchestrator.run_image_generator_agent")
         # Mock subprocess
         mock_subprocess.return_value.returncode = 0
         
@@ -198,7 +222,9 @@ class TestContentPipeline(unittest.TestCase):
     @patch("orchestrator.run_draft_writer_agent")
     @patch("orchestrator.run_flow_editor_agent")
     @patch("orchestrator.run_line_editor_agent")
-    def test_process_content_piece(self, mock_line_editor, mock_flow_editor,
+    @patch("orchestrator.run_image_generator_agent")
+    @patch("orchestrator.run_wordpress_publisher_agent")
+    def test_process_content_piece(self, mock_wordpress_publisher, mock_image_gen, mock_line_editor, mock_flow_editor,
                                    mock_draft_writer, mock_research, mock_print):
         """Test processing a content piece through the pipeline."""
         # Mock agent results
@@ -206,11 +232,16 @@ class TestContentPipeline(unittest.TestCase):
         mock_draft_writer.return_value = True
         mock_flow_editor.return_value = True
         mock_line_editor.return_value = True
+        mock_image_gen.return_value = True
+        mock_wordpress_publisher.return_value = True
         
         # Setup content piece with different statuses to test each step
         content_piece_draft = {**self.mock_content_piece, "status": "draft"}
         content_piece_researched = {**self.mock_content_piece, "status": "researched"}
         content_piece_written = {**self.mock_content_piece, "status": "written"}
+        content_piece_flow = {**self.mock_content_piece, "status": "flow_edited"}
+        content_piece_line = {**self.mock_content_piece, "status": "line_edited"}
+        content_piece_image = {**self.mock_content_piece, "status": "image_generated"}
         
         # Test processing a draft content piece
         result_draft = process_content_piece(content_piece_draft, MagicMock())
@@ -244,23 +275,39 @@ class TestContentPipeline(unittest.TestCase):
         mock_line_editor.reset_mock()
 
         # Test processing a flow_edited content piece
-        content_piece_flow = {**self.mock_content_piece, "status": "flow_edited"}
         result_flow = process_content_piece(content_piece_flow, MagicMock())
         mock_line_editor.assert_called_once_with(self.mock_content_id, MagicMock(), True)
         self.assertTrue(result_flow)
+        
+        # Reset mocks
+        mock_line_editor.reset_mock()
+        mock_image_gen.reset_mock()
+        
+        # Test processing a line_edited content piece
+        result_line = process_content_piece(content_piece_line, MagicMock())
+        mock_image_gen.assert_called_once_with(self.mock_content_id, MagicMock(), True)
+        self.assertTrue(result_line)
+        
+        # Reset mocks
+        mock_image_gen.reset_mock()
+        mock_wordpress_publisher.reset_mock()
+        
+        # Test processing an image_generated content piece
+        result_image = process_content_piece(content_piece_image, MagicMock())
+        mock_wordpress_publisher.assert_called_once_with(self.mock_content_id, MagicMock(), True, False)
+        self.assertTrue(result_image)
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
     def test_get_content_pieces_by_plan(self, mock_get_supabase, mock_print):
         """Test retrieving content pieces for a strategic plan."""
         # Mock Supabase client
-        mock_image_gen.reset_mock()
         mock_supabase = MagicMock()
-        # Test processing a line_edited content piece
-        content_piece_image = {**self.mock_content_piece, "status": "line_edited"}
-        result_image = process_content_piece(content_piece_image, MagicMock())
-        mock_image_gen.assert_called_once_with(self.mock_content_id, MagicMock(), True)
-        self.assertTrue(result_image)
+        mock_get_supabase.return_value = mock_supabase
+        
+        # Mock RPC method
+        mock_rpc_response = MagicMock(data=[self.mock_content_piece])
+        mock_supabase.rpc.return_value.execute.return_value = mock_rpc_response
         
         # Test the RPC method
         content_pieces_rpc = get_content_pieces_by_plan(self.mock_plan_id)
@@ -287,6 +334,7 @@ class TestContentPipeline(unittest.TestCase):
     # Full-pipeline smoke test with all agents mocked                    #
     # ------------------------------------------------------------------ #
     @patch("builtins.print")  # silence orchestrator prints
+    @patch("orchestrator.run_wordpress_publisher_agent")
     @patch("orchestrator.run_line_editor_agent")
     @patch("orchestrator.run_image_generator_agent")
     @patch("orchestrator.run_flow_editor_agent")
@@ -303,6 +351,7 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_flow,
         mock_run_line,
         mock_run_image,
+        mock_run_publisher,
         mock_print,
     ):
         """
@@ -322,6 +371,7 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_flow.return_value = True
         mock_run_line.return_value = True
         mock_run_image.return_value = True
+        mock_run_publisher.return_value = True
 
         # also record the call sequence for verification
         call_order = []
@@ -341,6 +391,7 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_flow.side_effect = _record("flow")
         mock_run_line.side_effect = _record("line")
         mock_run_image.side_effect = _record("image")
+        mock_run_publisher.side_effect = _record("publish")
 
         # 3. Build args namespace identical to CLI parsing
         args = SimpleNamespace(
@@ -367,9 +418,10 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_flow.assert_called_once()
         mock_run_line.assert_called_once()
         mock_run_image.assert_called_once()
+        mock_run_publisher.assert_called_once()
 
-        # Order: seo -> research -> draft -> flow -> line -> image
-        self.assertEqual(call_order, ["seo", "research", "draft", "flow", "line", "image"])
+        # Order: seo -> research -> draft -> flow -> line -> image -> publish
+        self.assertEqual(call_order, ["seo", "research", "draft", "flow", "line", "image", "publish"])
 
 
 if __name__ == "__main__":
