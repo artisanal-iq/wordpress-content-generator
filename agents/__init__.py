@@ -19,7 +19,7 @@ from .shared import schemas, utils
 
 # Import agent modules
 try:
-    from . import seo_agent
+    from . import seo_agent, site_scaffold_agent
 except ImportError:
     pass  # Agent may not be fully implemented yet
 
@@ -28,11 +28,16 @@ __all__ = [
     "schemas",
     "utils",
     "seo_agent",
+    "site_scaffold_agent",
 ]
 
 # Alias common agent functions for convenience
 try:
     from .seo_agent import run as run_seo_agent
+
     __all__.append("run_seo_agent")
+    from .site_scaffold_agent import run as run_site_scaffold_agent
+
+    __all__.append("run_site_scaffold_agent")
 except ImportError:
     pass
