@@ -32,12 +32,12 @@
 
 ### Tasks:
 
-* [ ] Build **SEO Agent** to generate keyword clusters from strategy
-* [ ] Build **Research Agent** to retrieve and store citations
-* [ ] Build **Writer Agent** to generate drafts using keywords + research
-* [ ] Build **Flow Editor Agent** to clean structure and transitions
-* [ ] Enable orchestration from strategy plan → stored draft
-* [ ] Store all intermediate outputs in Supabase
+* [x] Build **SEO Agent** to generate keyword clusters from strategy
+* [x] Build **Research Agent** to retrieve and store citations
+* [x] Build **Writer Agent** to generate drafts using keywords + research
+* [x] Build **Flow Editor Agent** to clean structure and transitions
+* [x] Enable orchestration from strategy plan → stored draft
+* [x] Store all intermediate outputs in Supabase
 
 ---
 
@@ -51,7 +51,7 @@
 ### Tasks:
 
 * [ ] Build **Hook Agent** (main + 7 microhooks stored in DB)
-* [ ] Build **Line Editor Agent** (clarity, grammar, voice)
+* [x] Build **Line Editor Agent** (clarity, grammar, voice)
 * [ ] Build **Headline Agent** (evaluate clickability, SEO)
 * [ ] Enable draft assembly (merge output from agents)
 * [ ] Add export-ready formatting: WordPress-compatible markdown or HTML
@@ -67,7 +67,7 @@
 
 ### Tasks:
 
-* [ ] Build **Image Agent** to search and resize images (via Pexels/Unsplash API)
+* [x] Build **Image Agent** to generate and resize images (via DALL-E API)
 * [ ] Store image assets in Supabase Storage
 * [ ] Use **Publisher Agent** to push content via WordPress REST API
 * [ ] Schedule post, update post ID + slug in Supabase
@@ -113,4 +113,3 @@
 * A/B test headlines or image thumbnails
 * WordPress E-E-A-T page auto-builder (About, Contact, Author)
 * Metrics ingestion (traffic, CTR, conversion) to feedback loop into strategy
-
