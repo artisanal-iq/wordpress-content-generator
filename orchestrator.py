@@ -80,7 +80,7 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
     # -------------------------------------------------
     # Debug statement 1 – entering function
     # -------------------------------------------------
-    print(f"{YELLOW}DEBUG: Starting run_seo_agent with plan_id: {plan_id}{ENDC}")
+    print(f"{YELLOW}DEBUG: Running SEO agent with plan_id={plan_id}{ENDC}")
     
     cmd = ["python", "enhanced_seo_agent.py", "--plan-id", plan_id]
     
@@ -102,43 +102,49 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
         
         print(f"{GREEN}SEO agent completed successfully{ENDC}")
         
-        # Extract content piece IDs from the output
-        content_pieces = []
-        
-        # Look for JSON files created by the SEO agent
-        seo_files = Path(".").glob(f"seo_analysis_{plan_id.split('-')[0]}*.json")
-        
-        for file in seo_files:
-            try:
-                with open(file, "r") as f:
-                    data = json.load(f)
-                    # Content piece IDs would be returned by the SEO agent in future versions
-            except Exception:
-                continue
-        
         # Get content pieces from the database
         try:
             # -------------------------------------------------
             # Debug statement 3 – about to hit database
             # -------------------------------------------------
             print(f"{YELLOW}DEBUG: About to query database for content pieces{ENDC}")
-            # (Supabase-py does not expose raw SQL, so we log the high-level query.)
-
-            response = supabase_client.table("content_pieces").select("id").eq("strategic_plan_id", plan_id).execute()
-            
-            if response.data:
+            # First try with RPC function
+            try:
+                print(f"{YELLOW}DEBUG: Using query: SELECT id FROM content_pieces WHERE strategic_plan_id = '{plan_id}'{ENDC}")
+                response = supabase_client.rpc(
+                    "select_content_pieces_by_plan",
+                    {"plan_id_param": plan_id}
+                ).execute()
                 content_pieces = [item["id"] for item in response.data]
-                # -------------------------------------------------
-                # Debug statement 5 – content pieces retrieved
-                # -------------------------------------------------
-                print(f"{YELLOW}DEBUG: Retrieved content_pieces: {content_pieces}{ENDC}")
-                print(f"{GREEN}Found {len(content_pieces)} content pieces in database{ENDC}")
-            else:
-                print(f"{YELLOW}No content pieces found in database for plan: {plan_id}{ENDC}")
+            except Exception as rpc_error:
+                print(f"{RED}Error retrieving content pieces: {rpc_error}{ENDC}")
+                print(f"{YELLOW}DEBUG: Exception details: {rpc_error.__dict__}{ENDC}")
+                print(f"{YELLOW}DEBUG: Trying alternate method to find content pieces{ENDC}")
+                
+                # Fallback to direct query
+                # First get all content pieces
+                response = supabase_client.table("content_pieces").select("id, strategic_plan_id").execute()
+                
+                if not response.data:
+                    print(f"{YELLOW}No content pieces found in database{ENDC}")
+                    return []
+                
+                # Filter manually by plan ID
+                print(f"{YELLOW}DEBUG: Found {len(response.data)} total content pieces{ENDC}")
+                content_pieces = []
+                for item in response.data:
+                    print(f"{YELLOW}DEBUG: Content piece {item['id']} has plan ID {item['strategic_plan_id']}{ENDC}")
+                    if item["strategic_plan_id"] == plan_id:
+                        content_pieces.append(item["id"])
+                
+                print(f"{YELLOW}DEBUG: Manually filtered content pieces: {content_pieces}{ENDC}")
+            
+            print(f"{GREEN}Found {len(content_pieces)} content pieces in database{ENDC}")
+            return content_pieces
+            
         except Exception as e:
             print(f"{RED}Error retrieving content pieces: {e}{ENDC}")
-        
-        return content_pieces
+            return []
     
     except Exception as e:
         print(f"{RED}Error running SEO agent: {e}{ENDC}")
@@ -175,6 +181,39 @@ def run_research_agent(content_id, supabase_client, use_ai=False):
     
     except Exception as e:
         print(f"{RED}Error running research agent: {e}{ENDC}")
+        return False
+
+def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
+    """
+    Run the Draft-Writer agent for a given content piece.
+
+    Args:
+        content_id (str): Content piece UUID.
+        supabase_client: Initialized Supabase client (currently unused, placeholder for future needs).
+        use_ai (bool): Whether to call OpenAI (default True).
+    Returns:
+        bool: True on success, False on failure.
+    """
+    print(f"{BLUE}Running draft writer agent for content: {content_id}{ENDC}")
+    
+    cmd = ["python", "draft_writer_agent.py", "--content-id", content_id]
+    
+    if not use_ai:
+        cmd.append("--no-ai")
+    
+    try:
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if process.returncode != 0:
+            print(f"{RED}Draft writer agent failed with code {process.returncode}{ENDC}")
+            print(f"{RED}Error: {process.stderr}{ENDC}")
+            return False
+        
+        print(f"{GREEN}Draft writer agent completed successfully{ENDC}")
+        return True
+    
+    except Exception as e:
+        print(f"{RED}Error running draft writer agent: {e}{ENDC}")
         return False
 
 # --------------------------------------------------------------------------- #
@@ -214,7 +253,41 @@ def run_flow_editor_agent(content_id, supabase_client, use_ai=False):
         print(f"{RED}Error running flow editor agent: {e}{ENDC}")
         return False
 
-def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
+# --------------------------------------------------------------------------- #
+# Line-Editor Agent                                                           #
+# --------------------------------------------------------------------------- #
+
+def run_line_editor_agent(content_id, supabase_client, use_ai=False):
+    """
+    Run the Line-Editor agent for a given content piece.
+
+    Args:
+        content_id (str): Content piece UUID.
+        supabase_client: Supabase client (placeholder, reserved for future use).
+        use_ai (bool): Whether to call OpenAI (default True).
+    Returns:
+        bool: True on success, False on failure.
+    """
+    print(f"{BLUE}Running line editor agent for content: {content_id}{ENDC}")
+
+    cmd = ["python", "line_editor_agent.py", "--content-id", content_id]
+    if not use_ai:
+        cmd.append("--no-ai")
+
+    try:
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        if process.returncode != 0:
+            print(f"{RED}Line editor agent failed with code {process.returncode}{ENDC}")
+            print(f"{RED}Error: {process.stderr}{ENDC}")
+            return False
+
+        print(f"{GREEN}Line editor agent completed successfully{ENDC}")
+        return True
+
+    except Exception as e:
+        print(f"{RED}Error running line editor agent: {e}{ENDC}")
+        return False
+
 # --------------------------------------------------------------------------- #
 # Content Piece Processor                                                     #
 # --------------------------------------------------------------------------- #
@@ -231,6 +304,7 @@ def process_content_piece(
         - status == "draft"      -> run research agent
         - status == "researched" -> run draft-writer agent
         - status == "written"    -> run flow-editor agent
+        - status == "flow_edited" -> run line-editor agent
 
     Args:
         content_piece: Row dict from `content_pieces` table.
@@ -251,6 +325,8 @@ def process_content_piece(
         return run_draft_writer_agent(cid, supabase_client, use_ai)
     elif status == "written":
         return run_flow_editor_agent(cid, supabase_client, use_ai)
+    elif status == "flow_edited":
+        return run_line_editor_agent(cid, supabase_client, use_ai)
     else:
         # Unknown or already processed status – nothing to do
         print(
@@ -259,38 +335,30 @@ def process_content_piece(
         )
         return False
 
-
+def get_content_pieces_by_plan(plan_id):
     """
-    Run the Draft-Writer agent for a given content piece.
+    Get all content pieces for a strategic plan.
 
     Args:
-        content_id (str): Content piece UUID.
-        supabase_client: Initialized Supabase client (currently unused, placeholder for future needs).
-        use_ai (bool): Whether to call OpenAI (default True).
+        plan_id (str): Strategic plan UUID.
     Returns:
-        bool: True on success, False on failure.
+        list: Content piece data.
     """
-    print(f"{BLUE}Running draft writer agent for content: {content_id}{ENDC}")
-    
-    cmd = ["python", "draft_writer_agent.py", "--content-id", content_id]
-    
-    if not use_ai:
-        cmd.append("--no-ai")
+    supabase_client = get_supabase_client()
     
     try:
-        process = subprocess.run(cmd, capture_output=True, text=True)
+        # First try with RPC function
+        response = supabase_client.rpc(
+            "select_content_pieces_by_plan",
+            {"plan_id_param": plan_id}
+        ).execute()
+        return response.data
+    except Exception:
+        # Fallback to direct query
+        response = supabase_client.table("content_pieces").select("*").execute()
         
-        if process.returncode != 0:
-            print(f"{RED}Draft writer agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
-            return False
-        
-        print(f"{GREEN}Draft writer agent completed successfully{ENDC}")
-        return True
-    
-    except Exception as e:
-        print(f"{RED}Error running draft writer agent: {e}{ENDC}")
-        return False
+        # Filter manually by plan ID
+        return [item for item in response.data if item["strategic_plan_id"] == plan_id]
 
 def full_pipeline(args):
     """Run the full pipeline from strategic plan to research."""
@@ -371,6 +439,19 @@ def full_pipeline(args):
             # Sleep a bit between requests to avoid rate limiting
             time.sleep(1)
 
+    # Step 5: Run the line editor agent for each content piece
+    print(f"{BOLD}Step 5: Running Line Editor Agent for {len(content_pieces)} content pieces{ENDC}")
+
+    line_success_count = 0
+    for i, content_id in enumerate(content_pieces):
+        print(f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Line Editor Agent{ENDC}")
+
+        if run_line_editor_agent(content_id, supabase_client, not args.no_ai):
+            line_success_count += 1
+
+        if i < len(content_pieces) - 1:
+            time.sleep(1)
+
     # Summary
     print("\n" + "=" * 60)
     print(f"{BOLD}Pipeline Summary:{ENDC}")
@@ -379,6 +460,7 @@ def full_pipeline(args):
     print(f"Research: {research_success_count} of {len(content_pieces)} completed")
     print(f"Draft Writing: {draft_success_count} of {len(content_pieces)} completed")
     print(f"Flow Editing: {flow_success_count} of {len(content_pieces)} completed")
+    print(f"Line Editing: {line_success_count} of {len(content_pieces)} completed")
     
     return 0
 
