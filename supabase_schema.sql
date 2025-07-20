@@ -185,6 +185,31 @@ CREATE INDEX idx_agent_status_status ON agent_status(status);
 -- Create composite index on agent_status for agent and content_id
 CREATE INDEX idx_agent_status_agent_content ON agent_status(agent, content_id);
 
+-- Categories Table
+-- Stores content categories for strategic plans
+CREATE TABLE categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    strategic_plan_id UUID REFERENCES strategic_plans(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_plan_category UNIQUE (strategic_plan_id, name)
+);
+
+-- Create index on categories for strategic_plan_id
+CREATE INDEX idx_categories_plan_id ON categories(strategic_plan_id);
+
+-- User Profiles Table
+-- Stores application users and roles
+CREATE TABLE user_profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL DEFAULT 'editor',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT valid_user_role CHECK (role IN ('admin', 'editor'))
+);
+
 -- Content Sections Table
 -- Stores structured sections of content pieces
 CREATE TABLE content_sections (
@@ -235,4 +260,12 @@ FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
 CREATE TRIGGER update_content_sections_timestamp
 BEFORE UPDATE ON content_sections
+FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER update_categories_timestamp
+BEFORE UPDATE ON categories
+FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER update_user_profiles_timestamp
+BEFORE UPDATE ON user_profiles
 FOR EACH ROW EXECUTE FUNCTION update_timestamp();
