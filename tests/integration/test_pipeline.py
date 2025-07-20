@@ -123,8 +123,27 @@ class TestContentPipeline(unittest.TestCase):
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
     @patch("orchestrator.subprocess.run")
+    def test_run_image_generator_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+        """Test running the image generator agent."""
+        # Mock subprocess
+        mock_subprocess.return_value.returncode = 0
+
+        # Call the function
+        result = run_image_generator_agent(self.mock_content_id, MagicMock())
+
+        # Verify the agent was run
+        mock_subprocess.assert_called_once()
+        self.assertIn("image_generator_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
+        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
+        self.assertTrue(result)
+
+    @patch("builtins.print")
+    @patch("orchestrator.get_supabase_client")
+    @patch("orchestrator.subprocess.run")
     def test_run_draft_writer_agent(self, mock_subprocess, mock_get_supabase, mock_print):
         """Test running the draft writer agent."""
+    @patch("orchestrator.run_image_generator_agent")
         # Mock subprocess
         mock_subprocess.return_value.returncode = 0
         
@@ -175,46 +194,23 @@ class TestContentPipeline(unittest.TestCase):
         self.assertTrue(result)
 
     @patch("builtins.print")
-    @patch("orchestrator.get_supabase_client")
-    @patch("orchestrator.subprocess.run")
-    def test_run_image_generator_agent(self, mock_subprocess, mock_get_supabase, mock_print):
-        """Test running the image generator agent."""
-        # Mock subprocess
-        mock_subprocess.return_value.returncode = 0
-
-        # Call the function
-        result = run_image_generator_agent(self.mock_content_id, MagicMock())
-
-        # Verify the agent was run
-        mock_subprocess.assert_called_once()
-        self.assertIn("image_generator_agent.py", mock_subprocess.call_args[0][0][1])
-        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
-        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
-        self.assertTrue(result)
-
-    @patch("builtins.print")
     @patch("orchestrator.run_research_agent")
     @patch("orchestrator.run_draft_writer_agent")
     @patch("orchestrator.run_flow_editor_agent")
     @patch("orchestrator.run_line_editor_agent")
-    @patch("orchestrator.run_image_generator_agent")
-    def test_process_content_piece(self, mock_image_gen, mock_line_editor, 
-                                  mock_flow_editor, mock_draft_writer, 
-                                  mock_research, mock_print):
+    def test_process_content_piece(self, mock_line_editor, mock_flow_editor,
+                                   mock_draft_writer, mock_research, mock_print):
         """Test processing a content piece through the pipeline."""
         # Mock agent results
         mock_research.return_value = True
         mock_draft_writer.return_value = True
         mock_flow_editor.return_value = True
         mock_line_editor.return_value = True
-        mock_image_gen.return_value = True
         
-        # Setup content pieces with different statuses to test each step
+        # Setup content piece with different statuses to test each step
         content_piece_draft = {**self.mock_content_piece, "status": "draft"}
         content_piece_researched = {**self.mock_content_piece, "status": "researched"}
         content_piece_written = {**self.mock_content_piece, "status": "written"}
-        content_piece_flow_edited = {**self.mock_content_piece, "status": "flow_edited"}
-        content_piece_line_edited = {**self.mock_content_piece, "status": "line_edited"}
         
         # Test processing a draft content piece
         result_draft = process_content_piece(content_piece_draft, MagicMock())
@@ -223,6 +219,8 @@ class TestContentPipeline(unittest.TestCase):
         
         # Reset mocks
         mock_research.reset_mock()
+        mock_draft_writer.reset_mock()
+        mock_flow_editor.reset_mock()
         
         # Test processing a researched content piece
         result_researched = process_content_piece(content_piece_researched, MagicMock())
@@ -230,7 +228,9 @@ class TestContentPipeline(unittest.TestCase):
         self.assertTrue(result_researched)
         
         # Reset mocks
+        mock_research.reset_mock()
         mock_draft_writer.reset_mock()
+        mock_flow_editor.reset_mock()
         
         # Test processing a written content piece
         result_written = process_content_piece(content_piece_written, MagicMock())
@@ -238,32 +238,29 @@ class TestContentPipeline(unittest.TestCase):
         self.assertTrue(result_written)
 
         # Reset mocks
+        mock_research.reset_mock()
+        mock_draft_writer.reset_mock()
         mock_flow_editor.reset_mock()
-
-        # Test processing a flow_edited content piece
-        result_flow = process_content_piece(content_piece_flow_edited, MagicMock())
-        mock_line_editor.assert_called_once_with(self.mock_content_id, MagicMock(), True)
-        self.assertTrue(result_flow)
-
-        # Reset mocks
         mock_line_editor.reset_mock()
 
-        # Test processing a line_edited content piece
-        result_line = process_content_piece(content_piece_line_edited, MagicMock())
-        mock_image_gen.assert_called_once_with(self.mock_content_id, MagicMock(), True)
-        self.assertTrue(result_line)
+        # Test processing a flow_edited content piece
+        content_piece_flow = {**self.mock_content_piece, "status": "flow_edited"}
+        result_flow = process_content_piece(content_piece_flow, MagicMock())
+        mock_line_editor.assert_called_once_with(self.mock_content_id, MagicMock(), True)
+        self.assertTrue(result_flow)
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
     def test_get_content_pieces_by_plan(self, mock_get_supabase, mock_print):
         """Test retrieving content pieces for a strategic plan."""
         # Mock Supabase client
+        mock_image_gen.reset_mock()
         mock_supabase = MagicMock()
-        mock_get_supabase.return_value = mock_supabase
-        
-        # Mock RPC call for select_content_pieces_by_plan function
-        mock_rpc_response = MagicMock(data=[self.mock_content_piece])
-        mock_supabase.rpc.return_value.execute.return_value = mock_rpc_response
+        # Test processing a line_edited content piece
+        content_piece_image = {**self.mock_content_piece, "status": "line_edited"}
+        result_image = process_content_piece(content_piece_image, MagicMock())
+        mock_image_gen.assert_called_once_with(self.mock_content_id, MagicMock(), True)
+        self.assertTrue(result_image)
         
         # Test the RPC method
         content_pieces_rpc = get_content_pieces_by_plan(self.mock_plan_id)
@@ -290,8 +287,8 @@ class TestContentPipeline(unittest.TestCase):
     # Full-pipeline smoke test with all agents mocked                    #
     # ------------------------------------------------------------------ #
     @patch("builtins.print")  # silence orchestrator prints
-    @patch("orchestrator.run_image_generator_agent")
     @patch("orchestrator.run_line_editor_agent")
+    @patch("orchestrator.run_image_generator_agent")
     @patch("orchestrator.run_flow_editor_agent")
     @patch("orchestrator.run_draft_writer_agent")
     @patch("orchestrator.run_research_agent")
@@ -310,7 +307,7 @@ class TestContentPipeline(unittest.TestCase):
     ):
         """
         Ensure full_pipeline executes each step in order and returns success.
-        Specifically verifies that all agents, including the image generator agent, are reached.
+        Specifically verifies that the Line-Editor agent step is reached.
         """
         from types import SimpleNamespace
         import orchestrator  # local import to keep patch-decorator targets clear
