@@ -54,7 +54,7 @@
 * [x] Build **Line Editor Agent** (clarity, grammar, voice)
 * [ ] Build **Headline Agent** (evaluate clickability, SEO)
 * [ ] Enable draft assembly (merge output from agents)
-* [ ] Add export-ready formatting: WordPress-compatible markdown or HTML
+* [x] Add export-ready formatting: WordPress-compatible markdown or HTML
 
 ---
 
