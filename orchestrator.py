@@ -36,7 +36,8 @@ NEXT_AGENT_MAP = {
     "research-agent": "draft-writer-agent",
     "draft-writer-agent": "flow-editor-agent",
     "flow-editor-agent": "line-editor-agent",
-    "line-editor-agent": "image-generator-agent",
+    "line-editor-agent": "draft-assembly-agent",
+    "draft-assembly-agent": "image-generator-agent",
     "image-generator-agent": "wordpress-publisher-agent",
     "wordpress-publisher-agent": None,
 }
@@ -339,6 +340,36 @@ def run_line_editor_agent(content_id, supabase_client, use_ai=False):
 
 
 # --------------------------------------------------------------------------- #
+# Draft-Assembly Agent                                                        #
+# --------------------------------------------------------------------------- #
+
+
+def run_draft_assembly_agent(content_id, supabase_client, use_ai=False):
+    """Run the Draft-Assembly agent for a given content piece."""
+
+    print(f"{BLUE}Running draft assembly agent for content: {content_id}{ENDC}")
+
+    cmd = ["python", "draft_assembly_agent.py", "--content-id", content_id]
+
+    try:
+        process = subprocess.run(cmd, capture_output=True, text=True)
+
+        if process.returncode != 0:
+            print(
+                f"{RED}Draft assembly agent failed with code {process.returncode}{ENDC}"
+            )
+            print(f"{RED}Error: {process.stderr}{ENDC}")
+            return False
+
+        print(f"{GREEN}Draft assembly agent completed successfully{ENDC}")
+        return True
+
+    except Exception as e:
+        print(f"{RED}Error running draft assembly agent: {e}{ENDC}")
+        return False
+
+
+# --------------------------------------------------------------------------- #
 # Flow-Editor Agent                                                           #
 # --------------------------------------------------------------------------- #
 
@@ -412,6 +443,7 @@ AGENT_FUNCTIONS = {
     "draft-writer-agent": run_draft_writer_agent,
     "flow-editor-agent": run_flow_editor_agent,
     "line-editor-agent": run_line_editor_agent,
+    "draft-assembly-agent": run_draft_assembly_agent,
     "image-generator-agent": run_image_generator_agent,
     "wordpress-publisher-agent": run_wordpress_publisher_agent,
 }
@@ -475,6 +507,8 @@ def process_content_piece(
     if status == "flow_edited":
         return run_line_editor_agent(cid, supabase_client, use_ai)
     if status == "line_edited":
+        return run_draft_assembly_agent(cid, supabase_client, use_ai)
+    if status == "assembled":
         return run_image_generator_agent(cid, supabase_client, use_ai)
     if status == "image_generated":
         # By default we publish immediately without preview mode.
@@ -601,10 +635,26 @@ def full_pipeline(args):
 
         if i < len(content_pieces) - 1:
             time.sleep(1)
-
-    # Step 6: Run the image generator agent for each content piece
+    # Step 6: Assemble final drafts
     print(
-        f"{BOLD}Step 6: Running Image Generator Agent for {len(content_pieces)} content pieces{ENDC}"
+        f"{BOLD}Step 6: Running Draft Assembly Agent for {len(content_pieces)} content pieces{ENDC}"
+    )
+
+    assembly_success_count = 0
+    for i, content_id in enumerate(content_pieces):
+        print(
+            f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Draft Assembly Agent{ENDC}"
+        )
+
+        if run_draft_assembly_agent(content_id, supabase_client, not args.no_ai):
+            assembly_success_count += 1
+
+        if i < len(content_pieces) - 1:
+            time.sleep(1)
+
+    # Step 7: Run the image generator agent for each content piece
+    print(
+        f"{BOLD}Step 7: Running Image Generator Agent for {len(content_pieces)} content pieces{ENDC}"
     )
 
     image_success_count = 0
@@ -619,7 +669,7 @@ def full_pipeline(args):
         if i < len(content_pieces) - 1:
             time.sleep(1)
 
-    # Step 7: Run the WordPress publisher agent for each content piece
+    # Step 8: Run the WordPress publisher agent for each content piece
     print(
         f"{BOLD}Step 7: Running WordPress Publisher Agent for {len(content_pieces)} content pieces{ENDC}"
     )
@@ -645,6 +695,7 @@ def full_pipeline(args):
     print(f"Draft Writing: {draft_success_count} of {len(content_pieces)} completed")
     print(f"Flow Editing: {flow_success_count} of {len(content_pieces)} completed")
     print(f"Line Editing: {line_success_count} of {len(content_pieces)} completed")
+    print(f"Draft Assembly: {assembly_success_count} of {len(content_pieces)} completed")
     print(f"Image Generation: {image_success_count} of {len(content_pieces)} completed")
     print(
         f"WordPress Publishing: {publish_success_count} of {len(content_pieces)} completed"
