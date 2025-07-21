@@ -117,6 +117,11 @@ OPENAI_API_KEY
 WP_API_URL, WP_USERNAME, WP_APP_PASSWORD
 POCKETFLOW_API_URL, POCKETFLOW_API_KEY
 ```
+Optional dev flag:
+```
+NEXT_PUBLIC_DEV_AUTH_BYPASS
+```
+Set to `true` to bypass dashboard authentication during local development.
 Put secrets in `.env`; it’s ignored by Git.
 
 ---

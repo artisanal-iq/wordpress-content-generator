@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
+const BYPASS_AUTH = process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true';
+
 export async function middleware(request: NextRequest) {
+  if (BYPASS_AUTH) {
+    return NextResponse.next();
+  }
   const response = NextResponse.next();
   const supabase = createMiddlewareClient({ req: request, res: response });
 

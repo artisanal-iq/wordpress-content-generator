@@ -10,6 +10,7 @@ class TestDashboardAuth(unittest.TestCase):
             content = f.read()
         self.assertIn('createMiddlewareClient', content)
         self.assertIn("'/login'", content)
+        self.assertIn('DEV_AUTH_BYPASS', content)
 
     def test_settings_link_restricted(self):
         path = os.path.join('dashboard', 'src', 'app', 'layout.tsx')
