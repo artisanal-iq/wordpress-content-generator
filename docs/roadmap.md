@@ -18,8 +18,8 @@
 * [ ] Define Supabase tables (`strategic_plans`, `keywords`, `content_pieces`, etc.)
 * [ ] Deploy Vercel frontend with login + basic dashboard
 * [ ] Deploy Pocketbase with simple Orchestrator UI
-* [ ] Build `Agent Interface` pattern and task queue logic
-* [ ] Stub manual task input + trigger next-agent workflows
+* [x] Build `Agent Interface` pattern and task queue logic
+* [x] Stub manual task input + trigger next-agent workflows
 
 ---
 
