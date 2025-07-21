@@ -14,6 +14,8 @@ Agents are designed to be:
 The shared module provides common utilities, schemas, and helper functions used across agents.
 """
 
+from .exceptions import AgentConfigError, AgentDataError, AgentError
+
 # Import shared modules for easier access
 from .shared import schemas, utils
 
@@ -27,6 +29,9 @@ except ImportError:
 __all__ = [
     "schemas",
     "utils",
+    "AgentError",
+    "AgentConfigError",
+    "AgentDataError",
     "seo_agent",
     "site_scaffold_agent",
 ]
