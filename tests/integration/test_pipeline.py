@@ -22,6 +22,7 @@ from orchestrator import (
     run_draft_writer_agent,
     run_flow_editor_agent,
     run_line_editor_agent,
+    run_draft_assembly_agent,
     run_image_generator_agent,
     run_wordpress_publisher_agent,  # Added this import
     process_content_piece,
@@ -222,9 +223,11 @@ class TestContentPipeline(unittest.TestCase):
     @patch("orchestrator.run_draft_writer_agent")
     @patch("orchestrator.run_flow_editor_agent")
     @patch("orchestrator.run_line_editor_agent")
+    @patch("orchestrator.run_draft_assembly_agent")
     @patch("orchestrator.run_image_generator_agent")
     @patch("orchestrator.run_wordpress_publisher_agent")
-    def test_process_content_piece(self, mock_wordpress_publisher, mock_image_gen, mock_line_editor, mock_flow_editor,
+    def test_process_content_piece(self, mock_wordpress_publisher, mock_image_gen, mock_draft_assembly,
+                                   mock_line_editor, mock_flow_editor,
                                    mock_draft_writer, mock_research, mock_print):
         """Test processing a content piece through the pipeline."""
         # Mock agent results
@@ -241,6 +244,7 @@ class TestContentPipeline(unittest.TestCase):
         content_piece_written = {**self.mock_content_piece, "status": "written"}
         content_piece_flow = {**self.mock_content_piece, "status": "flow_edited"}
         content_piece_line = {**self.mock_content_piece, "status": "line_edited"}
+        content_piece_assembled = {**self.mock_content_piece, "status": "assembled"}
         content_piece_image = {**self.mock_content_piece, "status": "image_generated"}
         
         # Test processing a draft content piece
@@ -281,17 +285,26 @@ class TestContentPipeline(unittest.TestCase):
         
         # Reset mocks
         mock_line_editor.reset_mock()
-        mock_image_gen.reset_mock()
+        mock_draft_assembly.reset_mock()
         
         # Test processing a line_edited content piece
         result_line = process_content_piece(content_piece_line, MagicMock())
-        mock_image_gen.assert_called_once_with(self.mock_content_id, MagicMock(), True)
+        mock_draft_assembly.assert_called_once_with(self.mock_content_id, MagicMock(), True)
         self.assertTrue(result_line)
-        
+
+        # Reset mocks
+        mock_draft_assembly.reset_mock()
+        mock_image_gen.reset_mock()
+
+        # Test processing an assembled content piece
+        result_assembled = process_content_piece(content_piece_assembled, MagicMock())
+        mock_image_gen.assert_called_once_with(self.mock_content_id, MagicMock(), True)
+        self.assertTrue(result_assembled)
+
         # Reset mocks
         mock_image_gen.reset_mock()
         mock_wordpress_publisher.reset_mock()
-        
+
         # Test processing an image_generated content piece
         result_image = process_content_piece(content_piece_image, MagicMock())
         mock_wordpress_publisher.assert_called_once_with(self.mock_content_id, MagicMock(), True, False)
@@ -336,6 +349,7 @@ class TestContentPipeline(unittest.TestCase):
     @patch("builtins.print")  # silence orchestrator prints
     @patch("orchestrator.run_wordpress_publisher_agent")
     @patch("orchestrator.run_line_editor_agent")
+    @patch("orchestrator.run_draft_assembly_agent")
     @patch("orchestrator.run_image_generator_agent")
     @patch("orchestrator.run_flow_editor_agent")
     @patch("orchestrator.run_draft_writer_agent")
@@ -350,6 +364,7 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_draft,
         mock_run_flow,
         mock_run_line,
+        mock_run_assemble,
         mock_run_image,
         mock_run_publisher,
         mock_print,
@@ -390,6 +405,7 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_draft.side_effect = _record("draft")
         mock_run_flow.side_effect = _record("flow")
         mock_run_line.side_effect = _record("line")
+        mock_run_assemble.side_effect = _record("assemble")
         mock_run_image.side_effect = _record("image")
         mock_run_publisher.side_effect = _record("publish")
 
@@ -417,11 +433,12 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_draft.assert_called_once()
         mock_run_flow.assert_called_once()
         mock_run_line.assert_called_once()
+        mock_run_assemble.assert_called_once()
         mock_run_image.assert_called_once()
         mock_run_publisher.assert_called_once()
 
-        # Order: seo -> research -> draft -> flow -> line -> image -> publish
-        self.assertEqual(call_order, ["seo", "research", "draft", "flow", "line", "image", "publish"])
+        # Order: seo -> research -> draft -> flow -> line -> assemble -> image -> publish
+        self.assertEqual(call_order, ["seo", "research", "draft", "flow", "line", "assemble", "image", "publish"])
 
 
 if __name__ == "__main__":
