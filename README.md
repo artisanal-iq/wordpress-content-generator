@@ -57,6 +57,7 @@ Agents talk **only** through the database, never directly to each other.
 │   └── enhanced_seo_agent.py # AI-powered keyword & content ideation
 │   └── research_agent.py     # gathers citations & facts
 │   └── draft_writer_agent.py # turns research + keywords into full drafts
+│   └── headline-agent/       # generates and scores article titles
 │   └── site_scaffold_agent/  # scaffolds WordPress site structure
 ├── docs/                    # PRD, roadmap, sprint docs
 ├── tests/                   # pytest suites
