@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 
 from agents.shared.utils import get_supabase_client, setup_openai
 
+from agents.shared.utils import slugify
+
 # ANSI colors
 GREEN = "\033[92m"
 RED = "\033[91m"
@@ -283,7 +285,7 @@ def save_results_to_database(
             content_piece = {
                 "strategic_plan_id": plan_id,
                 "title": idea["title"],
-                "slug": idea["title"].lower().replace(" ", "-"),
+                "slug": slugify(idea["title"]),
                 "status": "draft",
                 "draft_text": idea["description"],
             }
