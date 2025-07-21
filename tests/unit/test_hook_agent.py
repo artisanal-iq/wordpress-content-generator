@@ -5,11 +5,17 @@ import os
 import sys
 import unittest
 from unittest.mock import MagicMock, mock_open, patch
+import importlib.util
 
-# Add repo root to path for imports
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Dynamically load the agent module from its new location
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+spec = importlib.util.spec_from_file_location(
+    "hook_agent",
+    os.path.join(REPO_ROOT, "agents", "hook-agent", "index.py"),
 )
+hook_agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(hook_agent)
+sys.modules["hook_agent"] = hook_agent
 
 from hook_agent import (generate_hooks_with_ai, get_content_keywords,
                         get_content_piece, get_strategic_plan,

@@ -100,7 +100,7 @@ class TestContentPipeline(unittest.TestCase):
         
         # Verify the agent was run
         mock_subprocess.assert_called_once()
-        self.assertIn("enhanced_seo_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("agents/enhanced-seo-agent/index.py", mock_subprocess.call_args[0][0][1])
         self.assertIn("--plan-id", mock_subprocess.call_args[0][0][2])
         self.assertIn(self.mock_plan_id, mock_subprocess.call_args[0][0][3])
 
@@ -117,7 +117,7 @@ class TestContentPipeline(unittest.TestCase):
         
         # Verify the agent was run
         mock_subprocess.assert_called_once()
-        self.assertIn("research_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("agents/research-agent/index.py", mock_subprocess.call_args[0][0][1])
         self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
@@ -135,7 +135,7 @@ class TestContentPipeline(unittest.TestCase):
 
         # Verify the agent was run
         mock_subprocess.assert_called_once()
-        self.assertIn("image_generator_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("agents/image-generator-agent/index.py", mock_subprocess.call_args[0][0][1])
         self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
@@ -153,7 +153,7 @@ class TestContentPipeline(unittest.TestCase):
         
         # Verify the agent was run
         mock_subprocess.assert_called_once()
-        self.assertIn("wordpress_publisher_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("agents/wordpress-publisher-agent/index.py", mock_subprocess.call_args[0][0][1])
         self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
@@ -177,7 +177,7 @@ class TestContentPipeline(unittest.TestCase):
         
         # Verify the agent was run
         mock_subprocess.assert_called_once()
-        self.assertIn("draft_writer_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("agents/draft-writer-agent/index.py", mock_subprocess.call_args[0][0][1])
         self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
@@ -195,7 +195,7 @@ class TestContentPipeline(unittest.TestCase):
         
         # Verify the agent was run
         mock_subprocess.assert_called_once()
-        self.assertIn("flow_editor_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("agents/flow-editor-agent/index.py", mock_subprocess.call_args[0][0][1])
         self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
@@ -213,7 +213,7 @@ class TestContentPipeline(unittest.TestCase):
 
         # Verify the agent was run
         mock_subprocess.assert_called_once()
-        self.assertIn("line_editor_agent.py", mock_subprocess.call_args[0][0][1])
+        self.assertIn("agents/line-editor-agent/index.py", mock_subprocess.call_args[0][0][1])
         self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)

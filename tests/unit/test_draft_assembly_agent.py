@@ -3,9 +3,17 @@
 import sys
 import os
 import unittest
+import importlib.util
 
-# Add repository root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Dynamically load the agent module from its new location
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+spec = importlib.util.spec_from_file_location(
+    "draft_assembly_agent",
+    os.path.join(REPO_ROOT, "agents", "draft-assembly-agent", "index.py"),
+)
+draft_assembly_agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(draft_assembly_agent)
+sys.modules["draft_assembly_agent"] = draft_assembly_agent
 
 from draft_assembly_agent import assemble_content
 

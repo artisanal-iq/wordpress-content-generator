@@ -8,11 +8,19 @@ import sys
 import unittest
 from unittest.mock import patch, MagicMock, mock_open
 from pathlib import Path
+import importlib.util
 
 import pytest
 
-# Add the parent directory to the path so we can import the agent
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Dynamically load the agent module from its new location
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+spec = importlib.util.spec_from_file_location(
+    "draft_writer_agent",
+    os.path.join(REPO_ROOT, "agents", "draft-writer-agent", "index.py"),
+)
+draft_writer_agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(draft_writer_agent)
+sys.modules["draft_writer_agent"] = draft_writer_agent
 
 # Import functions to test
 from draft_writer_agent import (

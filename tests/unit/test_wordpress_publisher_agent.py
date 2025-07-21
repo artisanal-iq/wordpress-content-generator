@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import sys
 import os
+import importlib.util
 import json
 import uuid
 import base64
@@ -14,10 +15,15 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 
-# Add the parent directory to the path so we can import the wordpress_publisher_agent module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-import wordpress_publisher_agent
+# Dynamically load the agent module from its new location
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+spec = importlib.util.spec_from_file_location(
+    "wordpress_publisher_agent",
+    os.path.join(REPO_ROOT, "agents", "wordpress-publisher-agent", "index.py"),
+)
+wordpress_publisher_agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(wordpress_publisher_agent)
+sys.modules["wordpress_publisher_agent"] = wordpress_publisher_agent
 
 class TestWordPressPublisherAgent(unittest.TestCase):
     """Test cases for WordPress Publisher Agent."""

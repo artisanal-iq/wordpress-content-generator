@@ -7,14 +7,20 @@ import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import sys
 import os
+import importlib.util
 import json
 from datetime import datetime
 from io import StringIO
 
-# Add the parent directory to the path so we can import the line_editor_agent module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-import line_editor_agent
+# Dynamically load the agent module from its new location
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+spec = importlib.util.spec_from_file_location(
+    "line_editor_agent",
+    os.path.join(REPO_ROOT, "agents", "line-editor-agent", "index.py"),
+)
+line_editor_agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(line_editor_agent)
+sys.modules["line_editor_agent"] = line_editor_agent
 
 class TestLineEditorAgent(unittest.TestCase):
     """Test cases for Line Editor Agent."""

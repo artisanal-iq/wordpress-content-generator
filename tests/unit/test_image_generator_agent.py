@@ -7,16 +7,22 @@ import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import sys
 import os
+import importlib.util
 import json
 import base64
 from datetime import datetime
 from io import StringIO, BytesIO
 from pathlib import Path
 
-# Add the parent directory to the path so we can import the image_generator_agent module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-import image_generator_agent
+# Dynamically load the agent module from its new location
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+spec = importlib.util.spec_from_file_location(
+    "image_generator_agent",
+    os.path.join(REPO_ROOT, "agents", "image-generator-agent", "index.py"),
+)
+image_generator_agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(image_generator_agent)
+sys.modules["image_generator_agent"] = image_generator_agent
 
 class TestImageGeneratorAgent(unittest.TestCase):
     """Test cases for Image Generator Agent."""

@@ -106,7 +106,7 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
     # -------------------------------------------------
     print(f"{YELLOW}DEBUG: Starting run_seo_agent with plan_id: {plan_id}{ENDC}")
 
-    cmd = ["python", "enhanced_seo_agent.py", "--plan-id", plan_id]
+    cmd = ["python", "agents/enhanced-seo-agent/index.py", "--plan-id", plan_id]
 
     if not use_ai:
         cmd.append("--no-ai")
@@ -195,7 +195,7 @@ def run_research_agent(content_id, supabase_client, use_ai=False):
     """
     print(f"{BLUE}Running research agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "research_agent.py", "--content-id", content_id]
+    cmd = ["python", "agents/research-agent/index.py", "--content-id", content_id]
 
     if not use_ai:
         cmd.append("--no-ai")
@@ -234,7 +234,7 @@ def run_image_generator_agent(content_id, supabase_client, use_ai=False):
     """
     print(f"{BLUE}Running image generator agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "image_generator_agent.py", "--content-id", content_id]
+    cmd = ["python", "agents/image-generator-agent/index.py", "--content-id", content_id]
     if not use_ai:
         cmd.append("--no-ai")
 
@@ -279,7 +279,7 @@ def run_wordpress_publisher_agent(
     """
     print(f"{BLUE}Running WordPress publisher agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "wordpress_publisher_agent.py", "--content-id", content_id]
+    cmd = ["python", "agents/wordpress-publisher-agent/index.py", "--content-id", content_id]
 
     # --no-ai flag is not relevant here but keep param for future parity
     if preview:
@@ -320,7 +320,7 @@ def run_line_editor_agent(content_id, supabase_client, use_ai=False):
     """
     print(f"{BLUE}Running line editor agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "line_editor_agent.py", "--content-id", content_id]
+    cmd = ["python", "agents/line-editor-agent/index.py", "--content-id", content_id]
     if not use_ai:
         cmd.append("--no-ai")
 
@@ -349,7 +349,7 @@ def run_draft_assembly_agent(content_id, supabase_client, use_ai=False):
 
     print(f"{BLUE}Running draft assembly agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "draft_assembly_agent.py", "--content-id", content_id]
+    cmd = ["python", "agents/draft-assembly-agent/index.py", "--content-id", content_id]
 
     try:
         process = subprocess.run(cmd, capture_output=True, text=True)
@@ -387,7 +387,7 @@ def run_flow_editor_agent(content_id, supabase_client, use_ai=False):
     """
     print(f"{BLUE}Running flow editor agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "flow_editor_agent.py", "--content-id", content_id]
+    cmd = ["python", "agents/flow-editor-agent/index.py", "--content-id", content_id]
 
     if not use_ai:
         cmd.append("--no-ai")
@@ -413,7 +413,7 @@ def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
 
     print(f"{BLUE}Running draft writer agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "draft_writer_agent.py", "--content-id", content_id]
+    cmd = ["python", "agents/draft-writer-agent/index.py", "--content-id", content_id]
 
     if not use_ai:
         cmd.append("--no-ai")
