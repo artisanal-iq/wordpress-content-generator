@@ -89,6 +89,22 @@ def create_strategic_plan(supabase_client, domain, audience, tone, niche, goal):
         return None
 
 
+def run_agent_subprocess(script: str, args: List[str]) -> tuple[bool, str]:
+    """Run an agent script via subprocess and return success status and output."""
+    cmd = ["python", script] + args
+    try:
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        if process.returncode != 0:
+            print(f"{RED}{script} failed with code {process.returncode}{ENDC}")
+            print(f"{RED}Error: {process.stderr}{ENDC}")
+            return False, process.stderr
+        print(f"{GREEN}{script} completed successfully{ENDC}")
+        return True, process.stdout
+    except Exception as e:
+        print(f"{RED}Error running {script}: {e}{ENDC}")
+        return False, str(e)
+
+
 def run_seo_agent(plan_id, supabase_client, use_ai=False):
     """
     Run the SEO agent for a given strategic plan.
@@ -106,80 +122,52 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
     # -------------------------------------------------
     print(f"{YELLOW}DEBUG: Starting run_seo_agent with plan_id: {plan_id}{ENDC}")
 
-    cmd = ["python", "enhanced_seo_agent.py", "--plan-id", plan_id]
+    args = ["--plan-id", plan_id]
 
     if not use_ai:
-        cmd.append("--no-ai")
+        args.append("--no-ai")
 
+    success, _ = run_agent_subprocess("enhanced_seo_agent.py", args)
+
+    if not success:
+        return []
+
+    # -------------------------------------------------
+    # Debug statement 2 – after subprocess completes
+    # -------------------------------------------------
+    print(f"{YELLOW}DEBUG: SEO agent subprocess finished successfully{ENDC}")
+
+    content_pieces = []
+
+    # Look for JSON files created by the SEO agent
+    seo_files = Path(".").glob(f"seo_analysis_{plan_id.split('-')[0]}*.json")
+    for file in seo_files:
+        try:
+            with open(file, "r") as f:
+                json.load(f)
+        except Exception:
+            continue
+
+    # Get content pieces from the database
     try:
-        process = subprocess.run(cmd, capture_output=True, text=True)
-
-        # -------------------------------------------------
-        # Debug statement 2 – after subprocess completes
-        # -------------------------------------------------
-        print(
-            f"{YELLOW}DEBUG: SEO agent process completed with return code: {process.returncode}{ENDC}"
+        print(f"{YELLOW}DEBUG: About to query database for content pieces{ENDC}")
+        response = (
+            supabase_client.table("content_pieces")
+            .select("id")
+            .eq("strategic_plan_id", plan_id)
+            .execute()
         )
 
-        if process.returncode != 0:
-            print(f"{RED}SEO agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
-            return []
-
-        print(f"{GREEN}SEO agent completed successfully{ENDC}")
-
-        # Extract content piece IDs from the output
-        content_pieces = []
-
-        # Look for JSON files created by the SEO agent
-        seo_files = Path(".").glob(f"seo_analysis_{plan_id.split('-')[0]}*.json")
-
-        for file in seo_files:
-            try:
-                with open(file, "r") as f:
-                    data = json.load(f)
-                    # Content piece IDs would be returned by the SEO agent in future versions
-            except Exception:
-                continue
-
-        # Get content pieces from the database
-        try:
-            # -------------------------------------------------
-            # Debug statement 3 – about to hit database
-            # -------------------------------------------------
-            print(f"{YELLOW}DEBUG: About to query database for content pieces{ENDC}")
-            # (Supabase-py does not expose raw SQL, so we log the high-level query.)
-
-            response = (
-                supabase_client.table("content_pieces")
-                .select("id")
-                .eq("strategic_plan_id", plan_id)
-                .execute()
-            )
-
-            if response.data:
-                content_pieces = [item["id"] for item in response.data]
-                # -------------------------------------------------
-                # Debug statement 5 – content pieces retrieved
-                # -------------------------------------------------
-                print(
-                    f"{YELLOW}DEBUG: Retrieved content_pieces: {content_pieces}{ENDC}"
-                )
-                print(
-                    f"{GREEN}Found {len(content_pieces)} content pieces in database{ENDC}"
-                )
-            else:
-                print(
-                    f"{YELLOW}No content pieces found in database for plan: {plan_id}{ENDC}"
-                )
-        except Exception as e:
-            print(f"{RED}Error retrieving content pieces: {e}{ENDC}")
-
-        return content_pieces
-
+        if response.data:
+            content_pieces = [item["id"] for item in response.data]
+            print(f"{YELLOW}DEBUG: Retrieved content_pieces: {content_pieces}{ENDC}")
+            print(f"{GREEN}Found {len(content_pieces)} content pieces in database{ENDC}")
+        else:
+            print(f"{YELLOW}No content pieces found in database for plan: {plan_id}{ENDC}")
     except Exception as e:
-        print(f"{RED}Error running SEO agent: {e}{ENDC}")
-        return []
+        print(f"{RED}Error retrieving content pieces: {e}{ENDC}")
+
+    return content_pieces
 
 
 def run_research_agent(content_id, supabase_client, use_ai=False):
@@ -195,25 +183,13 @@ def run_research_agent(content_id, supabase_client, use_ai=False):
     """
     print(f"{BLUE}Running research agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "research_agent.py", "--content-id", content_id]
+    args = ["--content-id", content_id]
 
     if not use_ai:
-        cmd.append("--no-ai")
+        args.append("--no-ai")
 
-    try:
-        process = subprocess.run(cmd, capture_output=True, text=True)
-
-        if process.returncode != 0:
-            print(f"{RED}Research agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
-            return False
-
-        print(f"{GREEN}Research agent completed successfully{ENDC}")
-        return True
-
-    except Exception as e:
-        print(f"{RED}Error running research agent: {e}{ENDC}")
-        return False
+    success, _ = run_agent_subprocess("research_agent.py", args)
+    return success
 
 
 # --------------------------------------------------------------------------- #
@@ -234,25 +210,12 @@ def run_image_generator_agent(content_id, supabase_client, use_ai=False):
     """
     print(f"{BLUE}Running image generator agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "image_generator_agent.py", "--content-id", content_id]
+    args = ["--content-id", content_id]
     if not use_ai:
-        cmd.append("--no-ai")
+        args.append("--no-ai")
 
-    try:
-        process = subprocess.run(cmd, capture_output=True, text=True)
-        if process.returncode != 0:
-            print(
-                f"{RED}Image generator agent failed with code {process.returncode}{ENDC}"
-            )
-            print(f"{RED}Error: {process.stderr}{ENDC}")
-            return False
-
-        print(f"{GREEN}Image generator agent completed successfully{ENDC}")
-        return True
-
-    except Exception as e:
-        print(f"{RED}Error running image generator agent: {e}{ENDC}")
-        return False
+    success, _ = run_agent_subprocess("image_generator_agent.py", args)
+    return success
 
 
 # --------------------------------------------------------------------------- #
@@ -279,27 +242,13 @@ def run_wordpress_publisher_agent(
     """
     print(f"{BLUE}Running WordPress publisher agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "wordpress_publisher_agent.py", "--content-id", content_id]
+    args = ["--content-id", content_id]
 
-    # --no-ai flag is not relevant here but keep param for future parity
     if preview:
-        cmd.append("--preview")
+        args.append("--preview")
 
-    try:
-        process = subprocess.run(cmd, capture_output=True, text=True)
-        if process.returncode != 0:
-            print(
-                f"{RED}WordPress publisher agent failed with code {process.returncode}{ENDC}"
-            )
-            print(f"{RED}Error: {process.stderr}{ENDC}")
-            return False
-
-        print(f"{GREEN}WordPress publisher agent completed successfully{ENDC}")
-        return True
-
-    except Exception as e:
-        print(f"{RED}Error running WordPress publisher agent: {e}{ENDC}")
-        return False
+    success, _ = run_agent_subprocess("wordpress_publisher_agent.py", args)
+    return success
 
 
 # --------------------------------------------------------------------------- #
@@ -320,23 +269,12 @@ def run_line_editor_agent(content_id, supabase_client, use_ai=False):
     """
     print(f"{BLUE}Running line editor agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "line_editor_agent.py", "--content-id", content_id]
+    args = ["--content-id", content_id]
     if not use_ai:
-        cmd.append("--no-ai")
+        args.append("--no-ai")
 
-    try:
-        process = subprocess.run(cmd, capture_output=True, text=True)
-        if process.returncode != 0:
-            print(f"{RED}Line editor agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
-            return False
-
-        print(f"{GREEN}Line editor agent completed successfully{ENDC}")
-        return True
-
-    except Exception as e:
-        print(f"{RED}Error running line editor agent: {e}{ENDC}")
-        return False
+    success, _ = run_agent_subprocess("line_editor_agent.py", args)
+    return success
 
 
 # --------------------------------------------------------------------------- #
@@ -349,24 +287,10 @@ def run_draft_assembly_agent(content_id, supabase_client, use_ai=False):
 
     print(f"{BLUE}Running draft assembly agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "draft_assembly_agent.py", "--content-id", content_id]
+    args = ["--content-id", content_id]
 
-    try:
-        process = subprocess.run(cmd, capture_output=True, text=True)
-
-        if process.returncode != 0:
-            print(
-                f"{RED}Draft assembly agent failed with code {process.returncode}{ENDC}"
-            )
-            print(f"{RED}Error: {process.stderr}{ENDC}")
-            return False
-
-        print(f"{GREEN}Draft assembly agent completed successfully{ENDC}")
-        return True
-
-    except Exception as e:
-        print(f"{RED}Error running draft assembly agent: {e}{ENDC}")
-        return False
+    success, _ = run_agent_subprocess("draft_assembly_agent.py", args)
+    return success
 
 
 # --------------------------------------------------------------------------- #
@@ -387,25 +311,13 @@ def run_flow_editor_agent(content_id, supabase_client, use_ai=False):
     """
     print(f"{BLUE}Running flow editor agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "flow_editor_agent.py", "--content-id", content_id]
+    args = ["--content-id", content_id]
 
     if not use_ai:
-        cmd.append("--no-ai")
+        args.append("--no-ai")
 
-    try:
-        process = subprocess.run(cmd, capture_output=True, text=True)
-
-        if process.returncode != 0:
-            print(f"{RED}Flow editor agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
-            return False
-
-        print(f"{GREEN}Flow editor agent completed successfully{ENDC}")
-        return True
-
-    except Exception as e:
-        print(f"{RED}Error running flow editor agent: {e}{ENDC}")
-        return False
+    success, _ = run_agent_subprocess("flow_editor_agent.py", args)
+    return success
 
 
 def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
@@ -413,27 +325,13 @@ def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
 
     print(f"{BLUE}Running draft writer agent for content: {content_id}{ENDC}")
 
-    cmd = ["python", "draft_writer_agent.py", "--content-id", content_id]
+    args = ["--content-id", content_id]
 
     if not use_ai:
-        cmd.append("--no-ai")
+        args.append("--no-ai")
 
-    try:
-        process = subprocess.run(cmd, capture_output=True, text=True)
-
-        if process.returncode != 0:
-            print(
-                f"{RED}Draft writer agent failed with code {process.returncode}{ENDC}"
-            )
-            print(f"{RED}Error: {process.stderr}{ENDC}")
-            return False
-
-        print(f"{GREEN}Draft writer agent completed successfully{ENDC}")
-        return True
-
-    except Exception as e:
-        print(f"{RED}Error running draft writer agent: {e}{ENDC}")
-        return False
+    success, _ = run_agent_subprocess("draft_writer_agent.py", args)
+    return success
 
 
 # Mapping of agent name to function used by the auto-run loop
