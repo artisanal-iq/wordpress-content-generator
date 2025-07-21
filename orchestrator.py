@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 from supabase import create_client
 
-from agents.shared.utils import create_agent_task, update_agent_status
+from agents.shared.utils import create_agent_task, update_agent_status, logger
 
 # ANSI colors
 GREEN = "\033[92m"
@@ -54,7 +54,7 @@ def get_supabase_client():
     key = os.getenv("SUPABASE_KEY")
 
     if not url or not key:
-        print(
+        logger.info(
             f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}"
         )
         sys.exit(1)
@@ -76,16 +76,16 @@ def create_strategic_plan(supabase_client, domain, audience, tone, niche, goal):
         response = supabase_client.table("strategic_plans").insert(plan).execute()
 
         if not response.data:
-            print(f"{RED}Failed to create strategic plan{ENDC}")
+            logger.info(f"{RED}Failed to create strategic plan{ENDC}")
             return None
 
         plan_id = response.data[0]["id"]
-        print(f"{GREEN}Created strategic plan: {plan_id}{ENDC}")
+        logger.info(f"{GREEN}Created strategic plan: {plan_id}{ENDC}")
 
         return plan_id
 
     except Exception as e:
-        print(f"{RED}Error creating strategic plan: {e}{ENDC}")
+        logger.info(f"{RED}Error creating strategic plan: {e}{ENDC}")
         return None
 
 
@@ -100,11 +100,11 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
     Returns:
         list[str]: IDs of created content pieces.
     """
-    print(f"{BLUE}Running SEO agent for plan: {plan_id}{ENDC}")
+    logger.info(f"{BLUE}Running SEO agent for plan: {plan_id}{ENDC}")
     # -------------------------------------------------
     # Debug statement 1 – entering function
     # -------------------------------------------------
-    print(f"{YELLOW}DEBUG: Starting run_seo_agent with plan_id: {plan_id}{ENDC}")
+    logger.info(f"{YELLOW}DEBUG: Starting run_seo_agent with plan_id: {plan_id}{ENDC}")
 
     cmd = ["python", "enhanced_seo_agent.py", "--plan-id", plan_id]
 
@@ -117,16 +117,16 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
         # -------------------------------------------------
         # Debug statement 2 – after subprocess completes
         # -------------------------------------------------
-        print(
+        logger.info(
             f"{YELLOW}DEBUG: SEO agent process completed with return code: {process.returncode}{ENDC}"
         )
 
         if process.returncode != 0:
-            print(f"{RED}SEO agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}SEO agent failed with code {process.returncode}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return []
 
-        print(f"{GREEN}SEO agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}SEO agent completed successfully{ENDC}")
 
         # Extract content piece IDs from the output
         content_pieces = []
@@ -147,7 +147,7 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
             # -------------------------------------------------
             # Debug statement 3 – about to hit database
             # -------------------------------------------------
-            print(f"{YELLOW}DEBUG: About to query database for content pieces{ENDC}")
+            logger.info(f"{YELLOW}DEBUG: About to query database for content pieces{ENDC}")
             # (Supabase-py does not expose raw SQL, so we log the high-level query.)
 
             response = (
@@ -162,23 +162,23 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
                 # -------------------------------------------------
                 # Debug statement 5 – content pieces retrieved
                 # -------------------------------------------------
-                print(
+                logger.info(
                     f"{YELLOW}DEBUG: Retrieved content_pieces: {content_pieces}{ENDC}"
                 )
-                print(
+                logger.info(
                     f"{GREEN}Found {len(content_pieces)} content pieces in database{ENDC}"
                 )
             else:
-                print(
+                logger.info(
                     f"{YELLOW}No content pieces found in database for plan: {plan_id}{ENDC}"
                 )
         except Exception as e:
-            print(f"{RED}Error retrieving content pieces: {e}{ENDC}")
+            logger.info(f"{RED}Error retrieving content pieces: {e}{ENDC}")
 
         return content_pieces
 
     except Exception as e:
-        print(f"{RED}Error running SEO agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running SEO agent: {e}{ENDC}")
         return []
 
 
@@ -193,7 +193,7 @@ def run_research_agent(content_id, supabase_client, use_ai=False):
     Returns:
         bool: True on success, False on failure.
     """
-    print(f"{BLUE}Running research agent for content: {content_id}{ENDC}")
+    logger.info(f"{BLUE}Running research agent for content: {content_id}{ENDC}")
 
     cmd = ["python", "research_agent.py", "--content-id", content_id]
 
@@ -204,15 +204,15 @@ def run_research_agent(content_id, supabase_client, use_ai=False):
         process = subprocess.run(cmd, capture_output=True, text=True)
 
         if process.returncode != 0:
-            print(f"{RED}Research agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}Research agent failed with code {process.returncode}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return False
 
-        print(f"{GREEN}Research agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}Research agent completed successfully{ENDC}")
         return True
 
     except Exception as e:
-        print(f"{RED}Error running research agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running research agent: {e}{ENDC}")
         return False
 
 
@@ -232,7 +232,7 @@ def run_image_generator_agent(content_id, supabase_client, use_ai=False):
     Returns:
         bool: True on success, False on failure.
     """
-    print(f"{BLUE}Running image generator agent for content: {content_id}{ENDC}")
+    logger.info(f"{BLUE}Running image generator agent for content: {content_id}{ENDC}")
 
     cmd = ["python", "image_generator_agent.py", "--content-id", content_id]
     if not use_ai:
@@ -241,17 +241,17 @@ def run_image_generator_agent(content_id, supabase_client, use_ai=False):
     try:
         process = subprocess.run(cmd, capture_output=True, text=True)
         if process.returncode != 0:
-            print(
+            logger.info(
                 f"{RED}Image generator agent failed with code {process.returncode}{ENDC}"
             )
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return False
 
-        print(f"{GREEN}Image generator agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}Image generator agent completed successfully{ENDC}")
         return True
 
     except Exception as e:
-        print(f"{RED}Error running image generator agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running image generator agent: {e}{ENDC}")
         return False
 
 
@@ -277,7 +277,7 @@ def run_wordpress_publisher_agent(
     Returns:
         bool: True on success, False on failure.
     """
-    print(f"{BLUE}Running WordPress publisher agent for content: {content_id}{ENDC}")
+    logger.info(f"{BLUE}Running WordPress publisher agent for content: {content_id}{ENDC}")
 
     cmd = ["python", "wordpress_publisher_agent.py", "--content-id", content_id]
 
@@ -288,17 +288,17 @@ def run_wordpress_publisher_agent(
     try:
         process = subprocess.run(cmd, capture_output=True, text=True)
         if process.returncode != 0:
-            print(
+            logger.info(
                 f"{RED}WordPress publisher agent failed with code {process.returncode}{ENDC}"
             )
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return False
 
-        print(f"{GREEN}WordPress publisher agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}WordPress publisher agent completed successfully{ENDC}")
         return True
 
     except Exception as e:
-        print(f"{RED}Error running WordPress publisher agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running WordPress publisher agent: {e}{ENDC}")
         return False
 
 
@@ -318,7 +318,7 @@ def run_line_editor_agent(content_id, supabase_client, use_ai=False):
     Returns:
         bool: True on success, False on failure.
     """
-    print(f"{BLUE}Running line editor agent for content: {content_id}{ENDC}")
+    logger.info(f"{BLUE}Running line editor agent for content: {content_id}{ENDC}")
 
     cmd = ["python", "line_editor_agent.py", "--content-id", content_id]
     if not use_ai:
@@ -327,15 +327,15 @@ def run_line_editor_agent(content_id, supabase_client, use_ai=False):
     try:
         process = subprocess.run(cmd, capture_output=True, text=True)
         if process.returncode != 0:
-            print(f"{RED}Line editor agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}Line editor agent failed with code {process.returncode}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return False
 
-        print(f"{GREEN}Line editor agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}Line editor agent completed successfully{ENDC}")
         return True
 
     except Exception as e:
-        print(f"{RED}Error running line editor agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running line editor agent: {e}{ENDC}")
         return False
 
 
@@ -347,7 +347,7 @@ def run_line_editor_agent(content_id, supabase_client, use_ai=False):
 def run_draft_assembly_agent(content_id, supabase_client, use_ai=False):
     """Run the Draft-Assembly agent for a given content piece."""
 
-    print(f"{BLUE}Running draft assembly agent for content: {content_id}{ENDC}")
+    logger.info(f"{BLUE}Running draft assembly agent for content: {content_id}{ENDC}")
 
     cmd = ["python", "draft_assembly_agent.py", "--content-id", content_id]
 
@@ -355,17 +355,17 @@ def run_draft_assembly_agent(content_id, supabase_client, use_ai=False):
         process = subprocess.run(cmd, capture_output=True, text=True)
 
         if process.returncode != 0:
-            print(
+            logger.info(
                 f"{RED}Draft assembly agent failed with code {process.returncode}{ENDC}"
             )
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return False
 
-        print(f"{GREEN}Draft assembly agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}Draft assembly agent completed successfully{ENDC}")
         return True
 
     except Exception as e:
-        print(f"{RED}Error running draft assembly agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running draft assembly agent: {e}{ENDC}")
         return False
 
 
@@ -385,7 +385,7 @@ def run_flow_editor_agent(content_id, supabase_client, use_ai=False):
     Returns:
         bool: True on success, False on failure.
     """
-    print(f"{BLUE}Running flow editor agent for content: {content_id}{ENDC}")
+    logger.info(f"{BLUE}Running flow editor agent for content: {content_id}{ENDC}")
 
     cmd = ["python", "flow_editor_agent.py", "--content-id", content_id]
 
@@ -396,22 +396,22 @@ def run_flow_editor_agent(content_id, supabase_client, use_ai=False):
         process = subprocess.run(cmd, capture_output=True, text=True)
 
         if process.returncode != 0:
-            print(f"{RED}Flow editor agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}Flow editor agent failed with code {process.returncode}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return False
 
-        print(f"{GREEN}Flow editor agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}Flow editor agent completed successfully{ENDC}")
         return True
 
     except Exception as e:
-        print(f"{RED}Error running flow editor agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running flow editor agent: {e}{ENDC}")
         return False
 
 
 def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
     """Run the Draft-Writer agent for a given content piece."""
 
-    print(f"{BLUE}Running draft writer agent for content: {content_id}{ENDC}")
+    logger.info(f"{BLUE}Running draft writer agent for content: {content_id}{ENDC}")
 
     cmd = ["python", "draft_writer_agent.py", "--content-id", content_id]
 
@@ -422,17 +422,17 @@ def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
         process = subprocess.run(cmd, capture_output=True, text=True)
 
         if process.returncode != 0:
-            print(
+            logger.info(
                 f"{RED}Draft writer agent failed with code {process.returncode}{ENDC}"
             )
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return False
 
-        print(f"{GREEN}Draft writer agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}Draft writer agent completed successfully{ENDC}")
         return True
 
     except Exception as e:
-        print(f"{RED}Error running draft writer agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running draft writer agent: {e}{ENDC}")
         return False
 
 
@@ -496,7 +496,7 @@ def process_content_piece(
     cid = content_piece["id"]
     status = content_piece.get("status", "").lower()
 
-    print(f"{YELLOW}DEBUG: process_content_piece → id={cid} status={status}{ENDC}")
+    logger.info(f"{YELLOW}DEBUG: process_content_piece → id={cid} status={status}{ENDC}")
 
     if status == "draft":
         return run_research_agent(cid, supabase_client, use_ai)
@@ -517,7 +517,7 @@ def process_content_piece(
         )
 
     # Unknown or already processed status – nothing to do
-    print(
+    logger.info(
         f"{YELLOW}Skipping content piece {cid}: "
         f"status '{status}' not actionable{ENDC}"
     )
@@ -526,8 +526,8 @@ def process_content_piece(
 
 def full_pipeline(args):
     """Run the full pipeline from strategic plan to research."""
-    print(f"{BOLD}WordPress Content Generator - Full Pipeline{ENDC}")
-    print("=" * 60)
+    logger.info(f"{BOLD}WordPress Content Generator - Full Pipeline{ENDC}")
+    logger.info("=" * 60)
 
     # Connect to Supabase
     supabase_client = get_supabase_client()
@@ -547,32 +547,32 @@ def full_pipeline(args):
         )
 
         if not plan_id:
-            print(f"{RED}Failed to create strategic plan. Cannot proceed.{ENDC}")
+            logger.info(f"{RED}Failed to create strategic plan. Cannot proceed.{ENDC}")
             return 1
 
     # Check if we have a plan ID
     if not plan_id:
-        print(
+        logger.info(
             f"{RED}No strategic plan ID provided. Use --plan-id or --create-plan{ENDC}"
         )
         return 1
 
     # Step 1: Run the SEO agent
-    print(f"{BOLD}Step 1: Running SEO Agent{ENDC}")
+    logger.info(f"{BOLD}Step 1: Running SEO Agent{ENDC}")
     content_pieces = run_seo_agent(plan_id, supabase_client, not args.no_ai)
 
     if not content_pieces:
-        print(f"{RED}No content pieces generated. Cannot proceed.{ENDC}")
+        logger.info(f"{RED}No content pieces generated. Cannot proceed.{ENDC}")
         return 1
 
     # Step 2: Run the research agent for each content piece
-    print(
+    logger.info(
         f"{BOLD}Step 2: Running Research Agent for {len(content_pieces)} content pieces{ENDC}"
     )
 
     research_success_count = 0
     for i, content_id in enumerate(content_pieces):
-        print(
+        logger.info(
             f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Research Agent{ENDC}"
         )
 
@@ -584,13 +584,13 @@ def full_pipeline(args):
             time.sleep(1)
 
     # Step 3: Run the draft writer agent for each content piece
-    print(
+    logger.info(
         f"{BOLD}Step 3: Running Draft Writer Agent for {len(content_pieces)} content pieces{ENDC}"
     )
 
     draft_success_count = 0
     for i, content_id in enumerate(content_pieces):
-        print(
+        logger.info(
             f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Draft Writer Agent{ENDC}"
         )
 
@@ -602,13 +602,13 @@ def full_pipeline(args):
             time.sleep(1)
 
     # Step 4: Run the flow editor agent for each content piece
-    print(
+    logger.info(
         f"{BOLD}Step 4: Running Flow Editor Agent for {len(content_pieces)} content pieces{ENDC}"
     )
 
     flow_success_count = 0
     for i, content_id in enumerate(content_pieces):
-        print(
+        logger.info(
             f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Flow Editor Agent{ENDC}"
         )
 
@@ -620,13 +620,13 @@ def full_pipeline(args):
             time.sleep(1)
 
     # Step 5: Run the line editor agent for each content piece
-    print(
+    logger.info(
         f"{BOLD}Step 5: Running Line Editor Agent for {len(content_pieces)} content pieces{ENDC}"
     )
 
     line_success_count = 0
     for i, content_id in enumerate(content_pieces):
-        print(
+        logger.info(
             f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Line Editor Agent{ENDC}"
         )
 
@@ -636,13 +636,13 @@ def full_pipeline(args):
         if i < len(content_pieces) - 1:
             time.sleep(1)
     # Step 6: Assemble final drafts
-    print(
+    logger.info(
         f"{BOLD}Step 6: Running Draft Assembly Agent for {len(content_pieces)} content pieces{ENDC}"
     )
 
     assembly_success_count = 0
     for i, content_id in enumerate(content_pieces):
-        print(
+        logger.info(
             f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Draft Assembly Agent{ENDC}"
         )
 
@@ -653,13 +653,13 @@ def full_pipeline(args):
             time.sleep(1)
 
     # Step 7: Run the image generator agent for each content piece
-    print(
+    logger.info(
         f"{BOLD}Step 7: Running Image Generator Agent for {len(content_pieces)} content pieces{ENDC}"
     )
 
     image_success_count = 0
     for i, content_id in enumerate(content_pieces):
-        print(
+        logger.info(
             f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Image Generator Agent{ENDC}"
         )
 
@@ -670,13 +670,13 @@ def full_pipeline(args):
             time.sleep(1)
 
     # Step 8: Run the WordPress publisher agent for each content piece
-    print(
+    logger.info(
         f"{BOLD}Step 7: Running WordPress Publisher Agent for {len(content_pieces)} content pieces{ENDC}"
     )
 
     publish_success_count = 0
     for i, content_id in enumerate(content_pieces):
-        print(
+        logger.info(
             f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with WordPress Publisher Agent{ENDC}"
         )
 
@@ -687,17 +687,17 @@ def full_pipeline(args):
             time.sleep(1)
 
     # Summary
-    print("\n" + "=" * 60)
-    print(f"{BOLD}Pipeline Summary:{ENDC}")
-    print(f"Strategic Plan: {plan_id}")
-    print(f"Content Pieces: {len(content_pieces)} generated")
-    print(f"Research: {research_success_count} of {len(content_pieces)} completed")
-    print(f"Draft Writing: {draft_success_count} of {len(content_pieces)} completed")
-    print(f"Flow Editing: {flow_success_count} of {len(content_pieces)} completed")
-    print(f"Line Editing: {line_success_count} of {len(content_pieces)} completed")
-    print(f"Draft Assembly: {assembly_success_count} of {len(content_pieces)} completed")
-    print(f"Image Generation: {image_success_count} of {len(content_pieces)} completed")
-    print(
+    logger.info("\n" + "=" * 60)
+    logger.info(f"{BOLD}Pipeline Summary:{ENDC}")
+    logger.info(f"Strategic Plan: {plan_id}")
+    logger.info(f"Content Pieces: {len(content_pieces)} generated")
+    logger.info(f"Research: {research_success_count} of {len(content_pieces)} completed")
+    logger.info(f"Draft Writing: {draft_success_count} of {len(content_pieces)} completed")
+    logger.info(f"Flow Editing: {flow_success_count} of {len(content_pieces)} completed")
+    logger.info(f"Line Editing: {line_success_count} of {len(content_pieces)} completed")
+    logger.info(f"Draft Assembly: {assembly_success_count} of {len(content_pieces)} completed")
+    logger.info(f"Image Generation: {image_success_count} of {len(content_pieces)} completed")
+    logger.info(
         f"WordPress Publishing: {publish_success_count} of {len(content_pieces)} completed"
     )
 

@@ -18,6 +18,8 @@ import sys
 import json
 import uuid
 import argparse
+
+from agents.shared.utils import logger
 import base64
 import re
 from datetime import datetime
@@ -31,7 +33,7 @@ try:
     from supabase import create_client
     from PIL import Image
 except ImportError:
-    print("Error: Required packages not installed. Run 'pip install openai supabase pillow'")
+    logger.info("Error: Required packages not installed. Run 'pip install openai supabase pillow'")
     sys.exit(1)
 
 
@@ -39,7 +41,7 @@ def setup_openai():
     """Initialize OpenAI client with API key from environment variables."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        print("Error: OPENAI_API_KEY environment variable not set")
+        logger.info("Error: OPENAI_API_KEY environment variable not set")
         sys.exit(1)
     
     return OpenAI(api_key=api_key)
@@ -51,7 +53,7 @@ def get_supabase_client():
     key = os.getenv("SUPABASE_KEY")
     
     if not url or not key:
-        print("Error: SUPABASE_URL and SUPABASE_KEY environment variables must be set")
+        logger.info("Error: SUPABASE_URL and SUPABASE_KEY environment variables must be set")
         sys.exit(1)
     
     return create_client(url, key)
@@ -72,14 +74,14 @@ def get_content_piece(supabase, content_id=None):
         # Get specific content piece by ID
         result = supabase.table("content_pieces").select("*").eq("id", content_id).execute()
         if not result.data:
-            print(f"Error: Content piece with ID {content_id} not found")
+            logger.info(f"Error: Content piece with ID {content_id} not found")
             sys.exit(1)
         return result.data[0]
     else:
         # Get the first content piece with status "line_edited"
         result = supabase.table("content_pieces").select("*").eq("status", "line_edited").limit(1).execute()
         if not result.data:
-            print("Error: No content pieces with status 'line_edited' found")
+            logger.info("Error: No content pieces with status 'line_edited' found")
             sys.exit(1)
         return result.data[0]
 
@@ -88,7 +90,7 @@ def get_content_keywords(supabase, content_id):
     """Retrieve keywords for a content piece."""
     result = supabase.table("keywords").select("*").eq("content_id", content_id).execute()
     if not result.data:
-        print(f"Warning: No keywords found for content piece {content_id}")
+        logger.info(f"Warning: No keywords found for content piece {content_id}")
         return None
     return result.data[0]
 
@@ -97,7 +99,7 @@ def get_strategic_plan(supabase, plan_id):
     """Retrieve strategic plan data."""
     result = supabase.table("strategic_plans").select("*").eq("id", plan_id).execute()
     if not result.data:
-        print(f"Error: Strategic plan with ID {plan_id} not found")
+        logger.info(f"Error: Strategic plan with ID {plan_id} not found")
         sys.exit(1)
     return result.data[0]
 
@@ -157,7 +159,7 @@ def generate_image_with_dalle(client, prompt, size="1024x1024", quality="standar
     Returns:
         Tuple of (image_data, response_metadata)
     """
-    print(f"Generating image with prompt: {prompt}")
+    logger.info(f"Generating image with prompt: {prompt}")
     
     try:
         response = client.images.generate(
@@ -180,11 +182,11 @@ def generate_image_with_dalle(client, prompt, size="1024x1024", quality="standar
             "created": datetime.utcnow().isoformat()
         }
         
-        print("Successfully generated image with DALL-E")
+        logger.info("Successfully generated image with DALL-E")
         return image_data, image_metadata
     
     except Exception as e:
-        print(f"Error generating image with DALL-E: {str(e)}")
+        logger.info(f"Error generating image with DALL-E: {str(e)}")
         sys.exit(1)
 
 
@@ -198,7 +200,7 @@ def generate_mock_image(prompt):
     Returns:
         Tuple of (image_data, metadata)
     """
-    print(f"Generating mock image for prompt: {prompt}")
+    logger.info(f"Generating mock image for prompt: {prompt}")
     
     # Create a simple colored image with text
     width, height = 1024, 1024
@@ -250,7 +252,7 @@ def save_image_to_file(image_data, content_id, content_title):
     with open(filepath, "wb") as f:
         f.write(image_data)
     
-    print(f"Saved image to file: {filepath}")
+    logger.info(f"Saved image to file: {filepath}")
     return str(filepath)
 
 
@@ -302,11 +304,11 @@ def update_database_with_image(supabase, content_id, image_path, image_metadata)
             "created_at": datetime.utcnow().isoformat()
         }).execute()
         
-        print(f"Successfully updated database with image for content piece: {content_id}")
+        logger.info(f"Successfully updated database with image for content piece: {content_id}")
         return True
     
     except Exception as e:
-        print(f"Error updating database with image: {str(e)}")
+        logger.info(f"Error updating database with image: {str(e)}")
         
         # Log error in agent status
         try:
@@ -320,7 +322,7 @@ def update_database_with_image(supabase, content_id, image_path, image_metadata)
                 "created_at": datetime.utcnow().isoformat()
             }).execute()
         except Exception as log_error:
-            print(f"Error logging agent status: {str(log_error)}")
+            logger.info(f"Error logging agent status: {str(log_error)}")
         
         return False
 
@@ -348,7 +350,7 @@ def main():
     content_piece = get_content_piece(supabase, args.content_id)
     content_id = content_piece["id"]
     
-    print(f"Processing content piece: {content_piece['title']} (ID: {content_id})")
+    logger.info(f"Processing content piece: {content_piece['title']} (ID: {content_id})")
     
     # Get keywords for better image prompts
     keywords = get_content_keywords(supabase, content_id)
@@ -358,7 +360,7 @@ def main():
     
     # Generate image
     if args.no_ai:
-        print("Using mock image generator (--no-ai flag set)")
+        logger.info("Using mock image generator (--no-ai flag set)")
         image_data, image_metadata = generate_mock_image(prompt)
     else:
         openai_client = setup_openai()
@@ -375,7 +377,7 @@ def main():
     # Update database
     update_database_with_image(supabase, content_id, image_path, image_metadata)
     
-    print("Image Generator Agent completed successfully")
+    logger.info("Image Generator Agent completed successfully")
 
 
 if __name__ == "__main__":

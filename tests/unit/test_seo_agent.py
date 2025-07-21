@@ -112,7 +112,7 @@ class TestSEOAgent(unittest.TestCase):
         mock_supabase.table.return_value.select.return_value.order.return_value.limit.assert_called_once_with(1)
         self.assertEqual(plan, self.mock_plan)
 
-    @patch("builtins.print")
+    @patch("enhanced_seo_agent.logger")
     def test_analyze_seo_keywords_with_ai(self, mock_print):
         """Test analyzing SEO keywords with OpenAI."""
         mock_openai_client = MagicMock()
@@ -125,7 +125,7 @@ class TestSEOAgent(unittest.TestCase):
         mock_openai_client.chat.completions.create.assert_called_once()
         self.assertEqual(result, self.mock_keywords)
 
-    @patch("builtins.print")
+    @patch("enhanced_seo_agent.logger")
     def test_generate_content_ideas_with_ai(self, mock_print):
         """Test generating content ideas with OpenAI."""
         mock_openai_client = MagicMock()
@@ -138,7 +138,7 @@ class TestSEOAgent(unittest.TestCase):
         mock_openai_client.chat.completions.create.assert_called_once()
         self.assertEqual(result, self.mock_content_ideas)
 
-    @patch("builtins.print")
+    @patch("enhanced_seo_agent.logger")
     def test_save_results_to_database(self, mock_print):
         """Test saving SEO results to the database."""
         mock_supabase = MagicMock()

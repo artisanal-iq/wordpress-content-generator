@@ -16,6 +16,8 @@ from typing import Dict, List, Any
 from dotenv import load_dotenv
 from supabase import create_client
 
+from agents.shared.utils import logger
+
 # Load environment variables
 load_dotenv()
 
@@ -33,7 +35,7 @@ def get_supabase_client():
     key = os.getenv("SUPABASE_KEY")
     
     if not url or not key:
-        print(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
+        logger.info(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
         sys.exit(1)
     
     return create_client(url, key)
@@ -48,13 +50,13 @@ def get_strategic_plan(supabase, plan_id=None):
             response = supabase.table("strategic_plans").select("*").order("created_at", desc=True).limit(1).execute()
         
         if not response.data:
-            print(f"{RED}No strategic plan found{ENDC}")
+            logger.info(f"{RED}No strategic plan found{ENDC}")
             sys.exit(1)
         
         return response.data[0]
     
     except Exception as e:
-        print(f"{RED}Error retrieving strategic plan: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving strategic plan: {e}{ENDC}")
         sys.exit(1)
 
 def analyze_seo_keywords(plan: Dict[str, Any]):
@@ -62,10 +64,10 @@ def analyze_seo_keywords(plan: Dict[str, Any]):
     Analyze the strategic plan and generate SEO keywords.
     In a real implementation, this would use OpenAI or similar to generate keywords.
     """
-    print(f"{BLUE}Analyzing strategic plan for SEO keywords...{ENDC}")
-    print(f"  Domain: {plan['domain']}")
-    print(f"  Audience: {plan['audience']}")
-    print(f"  Niche: {plan['niche']}")
+    logger.info(f"{BLUE}Analyzing strategic plan for SEO keywords...{ENDC}")
+    logger.info(f"  Domain: {plan['domain']}")
+    logger.info(f"  Audience: {plan['audience']}")
+    logger.info(f"  Niche: {plan['niche']}")
     
     # Simplified mock implementation
     # In a real agent, this would use AI to analyze and generate keywords
@@ -95,7 +97,7 @@ def generate_content_ideas(plan: Dict[str, Any], keywords: Dict[str, Any]):
     Generate content ideas based on the strategic plan and keywords.
     In a real implementation, this would use OpenAI or similar.
     """
-    print(f"{BLUE}Generating content ideas...{ENDC}")
+    logger.info(f"{BLUE}Generating content ideas...{ENDC}")
     
     # Simplified mock implementation
     # In a real agent, this would use AI to generate content ideas
@@ -159,7 +161,7 @@ def save_results_to_file(plan_id: str, keywords: Dict[str, Any], content_ideas: 
     with open(filename, "w") as f:
         json.dump(results, f, indent=2)
     
-    print(f"{GREEN}Results saved to {filename}{ENDC}")
+    logger.info(f"{GREEN}Results saved to {filename}{ENDC}")
     
     return filename
 
@@ -168,29 +170,29 @@ def main():
     parser.add_argument("--plan-id", help="ID of the strategic plan to analyze")
     args = parser.parse_args()
     
-    print(f"{BOLD}WordPress Content Generator - SEO Agent{ENDC}")
-    print("=" * 60)
+    logger.info(f"{BOLD}WordPress Content Generator - SEO Agent{ENDC}")
+    logger.info("=" * 60)
     
     # Connect to Supabase
     supabase = get_supabase_client()
     
     # Get the strategic plan
     plan = get_strategic_plan(supabase, args.plan_id)
-    print(f"{GREEN}Retrieved strategic plan: {plan['domain']}{ENDC}")
+    logger.info(f"{GREEN}Retrieved strategic plan: {plan['domain']}{ENDC}")
     
     # Analyze for SEO keywords
     keywords = analyze_seo_keywords(plan)
-    print(f"{GREEN}Generated {len(keywords['supporting_keywords'])} supporting keywords{ENDC}")
+    logger.info(f"{GREEN}Generated {len(keywords['supporting_keywords'])} supporting keywords{ENDC}")
     
     # Generate content ideas
     content_ideas = generate_content_ideas(plan, keywords)
-    print(f"{GREEN}Generated {len(content_ideas)} content ideas{ENDC}")
+    logger.info(f"{GREEN}Generated {len(content_ideas)} content ideas{ENDC}")
     
     # Save results to file
     filename = save_results_to_file(plan["id"], keywords, content_ideas)
     
-    print(f"\n{BOLD}SEO Analysis Complete!{ENDC}")
-    print(f"You can view the results in {filename}")
+    logger.info(f"\n{BOLD}SEO Analysis Complete!{ENDC}")
+    logger.info(f"You can view the results in {filename}")
     
     return 0
 

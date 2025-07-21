@@ -18,6 +18,8 @@ import sys
 import json
 import uuid
 import argparse
+
+from agents.shared.utils import logger
 from datetime import datetime
 import re
 
@@ -26,7 +28,7 @@ try:
     from openai import OpenAI
     from supabase import create_client
 except ImportError:
-    print("Error: Required packages not installed. Run 'pip install openai supabase'")
+    logger.info("Error: Required packages not installed. Run 'pip install openai supabase'")
     sys.exit(1)
 
 
@@ -34,7 +36,7 @@ def setup_openai():
     """Initialize OpenAI client with API key from environment variables."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        print("Error: OPENAI_API_KEY environment variable not set")
+        logger.info("Error: OPENAI_API_KEY environment variable not set")
         sys.exit(1)
     
     return OpenAI(api_key=api_key)
@@ -46,7 +48,7 @@ def get_supabase_client():
     key = os.getenv("SUPABASE_KEY")
     
     if not url or not key:
-        print("Error: SUPABASE_URL and SUPABASE_KEY environment variables must be set")
+        logger.info("Error: SUPABASE_URL and SUPABASE_KEY environment variables must be set")
         sys.exit(1)
     
     return create_client(url, key)
@@ -67,14 +69,14 @@ def get_content_piece(supabase, content_id=None):
         # Get specific content piece by ID
         result = supabase.table("content_pieces").select("*").eq("id", content_id).execute()
         if not result.data:
-            print(f"Error: Content piece with ID {content_id} not found")
+            logger.info(f"Error: Content piece with ID {content_id} not found")
             sys.exit(1)
         return result.data[0]
     else:
         # Get the first content piece with status "flow_edited"
         result = supabase.table("content_pieces").select("*").eq("status", "flow_edited").limit(1).execute()
         if not result.data:
-            print("Error: No content pieces with status 'flow_edited' found")
+            logger.info("Error: No content pieces with status 'flow_edited' found")
             sys.exit(1)
         return result.data[0]
 
@@ -83,7 +85,7 @@ def get_content_keywords(supabase, content_id):
     """Retrieve keywords for a content piece."""
     result = supabase.table("keywords").select("*").eq("content_id", content_id).execute()
     if not result.data:
-        print(f"Warning: No keywords found for content piece {content_id}")
+        logger.info(f"Warning: No keywords found for content piece {content_id}")
         return None
     return result.data[0]
 
@@ -92,7 +94,7 @@ def get_content_research(supabase, content_id):
     """Retrieve research data for a content piece."""
     result = supabase.table("research").select("*").eq("content_id", content_id).execute()
     if not result.data:
-        print(f"Warning: No research found for content piece {content_id}")
+        logger.info(f"Warning: No research found for content piece {content_id}")
         return []
     return result.data
 
@@ -101,7 +103,7 @@ def get_strategic_plan(supabase, plan_id):
     """Retrieve strategic plan data."""
     result = supabase.table("strategic_plans").select("*").eq("id", plan_id).execute()
     if not result.data:
-        print(f"Error: Strategic plan with ID {plan_id} not found")
+        logger.info(f"Error: Strategic plan with ID {plan_id} not found")
         sys.exit(1)
     return result.data[0]
 
@@ -110,7 +112,7 @@ def get_seo_agent_output(supabase, content_id):
     """Retrieve SEO agent output for a content piece."""
     result = supabase.table("agent_status").select("*").eq("content_id", content_id).eq("agent", "seo-agent").execute()
     if not result.data:
-        print(f"Warning: No SEO agent output found for content piece {content_id}")
+        logger.info(f"Warning: No SEO agent output found for content piece {content_id}")
         return None
     return result.data[0].get("output", {})
 
@@ -130,12 +132,12 @@ def improve_grammar_style_with_ai(client, content_piece, keywords, research, pla
     Returns:
         Line-edited article text
     """
-    print(f"Improving grammar and style for article: {content_piece['title']}")
+    logger.info(f"Improving grammar and style for article: {content_piece['title']}")
     
     # Extract existing draft text
     draft_text = content_piece.get("draft_text", "")
     if not draft_text:
-        print("Error: Content piece has no draft text")
+        logger.info("Error: Content piece has no draft text")
         sys.exit(1)
     
     # Extract keywords
@@ -184,11 +186,11 @@ Return the complete line-edited article in Markdown format.
         )
         
         line_edited_text = response.choices[0].message.content
-        print("Successfully improved grammar and style")
+        logger.info("Successfully improved grammar and style")
         return line_edited_text
     
     except Exception as e:
-        print(f"Error using OpenAI to improve grammar and style: {str(e)}")
+        logger.info(f"Error using OpenAI to improve grammar and style: {str(e)}")
         sys.exit(1)
 
 
@@ -262,11 +264,11 @@ def save_line_edited_to_database(supabase, content_id, line_edited_text):
             "created_at": datetime.utcnow().isoformat()
         }).execute()
         
-        print(f"Successfully saved line-edited article to database with ID: {content_id}")
+        logger.info(f"Successfully saved line-edited article to database with ID: {content_id}")
         return True
     
     except Exception as e:
-        print(f"Error saving line-edited article to database: {str(e)}")
+        logger.info(f"Error saving line-edited article to database: {str(e)}")
         
         # Log error in agent status
         try:
@@ -280,7 +282,7 @@ def save_line_edited_to_database(supabase, content_id, line_edited_text):
                 "created_at": datetime.utcnow().isoformat()
             }).execute()
         except Exception as log_error:
-            print(f"Error logging agent status: {str(log_error)}")
+            logger.info(f"Error logging agent status: {str(log_error)}")
         
         return False
 
@@ -304,7 +306,7 @@ def save_line_edited_to_file(content_id, content_title, line_edited_text):
     with open(filename, "w") as f:
         f.write(line_edited_text)
     
-    print(f"Saved line-edited article to file: {filename}")
+    logger.info(f"Saved line-edited article to file: {filename}")
     return filename
 
 
@@ -327,7 +329,7 @@ def main():
     content_piece = get_content_piece(supabase, args.content_id)
     content_id = content_piece["id"]
     
-    print(f"Processing content piece: {content_piece['title']} (ID: {content_id})")
+    logger.info(f"Processing content piece: {content_piece['title']} (ID: {content_id})")
     
     # Get related data
     keywords = get_content_keywords(supabase, content_id)
@@ -337,7 +339,7 @@ def main():
     
     # Improve grammar and style
     if args.no_ai:
-        print("Using mock data (--no-ai flag set)")
+        logger.info("Using mock data (--no-ai flag set)")
         line_edited_text = generate_mock_line_edited(content_piece)
     else:
         openai_client = setup_openai()
@@ -354,7 +356,7 @@ def main():
     save_line_edited_to_database(supabase, content_id, line_edited_text)
     save_line_edited_to_file(content_id, content_piece["title"], line_edited_text)
     
-    print("Line Editor Agent completed successfully")
+    logger.info("Line Editor Agent completed successfully")
 
 
 if __name__ == "__main__":

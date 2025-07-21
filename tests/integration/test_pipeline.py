@@ -56,7 +56,7 @@ class TestContentPipeline(unittest.TestCase):
             "status": "draft"
         }
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.get_supabase_client")
     def test_create_strategic_plan(self, mock_get_supabase, mock_print):
         """Test creating a strategic plan."""
@@ -83,7 +83,7 @@ class TestContentPipeline(unittest.TestCase):
         mock_supabase.table.return_value.insert.assert_called_once()
         self.assertEqual(plan_id, self.mock_plan_id)
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.get_supabase_client")
     @patch("orchestrator.subprocess.run")
     def test_run_seo_agent(self, mock_subprocess, mock_get_supabase, mock_print):
@@ -104,7 +104,7 @@ class TestContentPipeline(unittest.TestCase):
         self.assertIn("--plan-id", mock_subprocess.call_args[0][0][2])
         self.assertIn(self.mock_plan_id, mock_subprocess.call_args[0][0][3])
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.get_supabase_client")
     @patch("orchestrator.subprocess.run")
     def test_run_research_agent(self, mock_subprocess, mock_get_supabase, mock_print):
@@ -122,7 +122,7 @@ class TestContentPipeline(unittest.TestCase):
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.get_supabase_client")
     @patch("orchestrator.subprocess.run")
     def test_run_image_generator_agent(self, mock_subprocess, mock_get_supabase, mock_print):
@@ -140,7 +140,7 @@ class TestContentPipeline(unittest.TestCase):
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.get_supabase_client")
     @patch("orchestrator.subprocess.run")
     def test_run_wordpress_publisher_agent(self, mock_subprocess, mock_get_supabase, mock_print):
@@ -164,7 +164,7 @@ class TestContentPipeline(unittest.TestCase):
         self.assertIn("--preview", mock_subprocess.call_args[0][0])
         self.assertTrue(result)
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.get_supabase_client")
     @patch("orchestrator.subprocess.run")
     def test_run_draft_writer_agent(self, mock_subprocess, mock_get_supabase, mock_print):
@@ -182,7 +182,7 @@ class TestContentPipeline(unittest.TestCase):
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.get_supabase_client")
     @patch("orchestrator.subprocess.run")
     def test_run_flow_editor_agent(self, mock_subprocess, mock_get_supabase, mock_print):
@@ -200,7 +200,7 @@ class TestContentPipeline(unittest.TestCase):
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.get_supabase_client")
     @patch("orchestrator.subprocess.run")
     def test_run_line_editor_agent(self, mock_subprocess, mock_get_supabase, mock_print):
@@ -218,7 +218,7 @@ class TestContentPipeline(unittest.TestCase):
         self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
         self.assertTrue(result)
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.run_research_agent")
     @patch("orchestrator.run_draft_writer_agent")
     @patch("orchestrator.run_flow_editor_agent")
@@ -310,7 +310,7 @@ class TestContentPipeline(unittest.TestCase):
         mock_wordpress_publisher.assert_called_once_with(self.mock_content_id, MagicMock(), True, False)
         self.assertTrue(result_image)
 
-    @patch("builtins.print")
+    @patch("orchestrator.logger")
     @patch("orchestrator.get_supabase_client")
     def test_get_content_pieces_by_plan(self, mock_get_supabase, mock_print):
         """Test retrieving content pieces for a strategic plan."""
@@ -346,7 +346,7 @@ class TestContentPipeline(unittest.TestCase):
     # ------------------------------------------------------------------ #
     # Full-pipeline smoke test with all agents mocked                    #
     # ------------------------------------------------------------------ #
-    @patch("builtins.print")  # silence orchestrator prints
+    @patch("orchestrator.logger")  # silence orchestrator prints
     @patch("orchestrator.run_wordpress_publisher_agent")
     @patch("orchestrator.run_line_editor_agent")
     @patch("orchestrator.run_draft_assembly_agent")

@@ -224,7 +224,7 @@ In summary, this article has covered several key points about test keyword. The 
         mock_supabase.table.return_value.select.return_value.eq.return_value.eq.assert_called_once_with("agent", "seo-agent")
         self.assertEqual(seo_output, self.mock_seo_output)
 
-    @patch("builtins.print")
+    @patch("flow_editor_agent.logger")
     def test_improve_flow_with_ai(self, mock_print):
         """Test improving flow with OpenAI."""
         mock_openai_client = MagicMock()
@@ -253,7 +253,7 @@ In summary, this article has covered several key points about test keyword. The 
         self.assertIn("## Conclusion", result)
         self.assertGreater(len(result), len(self.mock_content_piece["draft_text"]))
 
-    @patch("builtins.print")
+    @patch("flow_editor_agent.logger")
     def test_save_flow_edited_to_database(self, mock_print):
         """Test saving flow edited article to the database."""
         mock_supabase = MagicMock()

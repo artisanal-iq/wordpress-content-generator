@@ -14,6 +14,8 @@ from typing import Dict, List, Any
 from datetime import datetime
 
 from dotenv import load_dotenv
+
+from agents.shared.utils import logger
 from supabase import create_client
 import openai
 
@@ -33,7 +35,7 @@ def setup_openai():
     api_key = os.getenv("OPENAI_API_KEY")
     
     if not api_key:
-        print(f"{RED}Error: OPENAI_API_KEY must be set in .env file{ENDC}")
+        logger.info(f"{RED}Error: OPENAI_API_KEY must be set in .env file{ENDC}")
         sys.exit(1)
     
     # Set up OpenAI client
@@ -47,7 +49,7 @@ def get_supabase_client():
     key = os.getenv("SUPABASE_KEY")
     
     if not url or not key:
-        print(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
+        logger.info(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
         sys.exit(1)
     
     return create_client(url, key)
@@ -62,13 +64,13 @@ def get_content_piece(supabase, content_id=None):
             response = supabase.table("content_pieces").select("*").eq("status", "draft").limit(1).execute()
         
         if not response.data:
-            print(f"{RED}No content piece found{ENDC}")
+            logger.info(f"{RED}No content piece found{ENDC}")
             sys.exit(1)
         
         return response.data[0]
     
     except Exception as e:
-        print(f"{RED}Error retrieving content piece: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving content piece: {e}{ENDC}")
         sys.exit(1)
 
 def get_content_keywords(supabase, content_id):
@@ -77,13 +79,13 @@ def get_content_keywords(supabase, content_id):
         response = supabase.table("keywords").select("*").eq("content_id", content_id).execute()
         
         if not response.data:
-            print(f"{RED}No keywords found for content piece: {content_id}{ENDC}")
+            logger.info(f"{RED}No keywords found for content piece: {content_id}{ENDC}")
             return None
         
         return response.data[0]
     
     except Exception as e:
-        print(f"{RED}Error retrieving keywords: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving keywords: {e}{ENDC}")
         return None
 
 def get_strategic_plan(supabase, plan_id):
@@ -92,20 +94,20 @@ def get_strategic_plan(supabase, plan_id):
         response = supabase.table("strategic_plans").select("*").eq("id", plan_id).execute()
         
         if not response.data:
-            print(f"{RED}No strategic plan found: {plan_id}{ENDC}")
+            logger.info(f"{RED}No strategic plan found: {plan_id}{ENDC}")
             return None
         
         return response.data[0]
     
     except Exception as e:
-        print(f"{RED}Error retrieving strategic plan: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving strategic plan: {e}{ENDC}")
         return None
 
 def perform_research_with_ai(openai_client, content_piece, keywords, strategic_plan):
     """
     Perform research for a content piece using OpenAI.
     """
-    print(f"{BLUE}Performing research for content piece: {content_piece['title']}{ENDC}")
+    logger.info(f"{BLUE}Performing research for content piece: {content_piece['title']}{ENDC}")
     
     try:
         # Craft a prompt for OpenAI
@@ -154,14 +156,14 @@ def perform_research_with_ai(openai_client, content_piece, keywords, strategic_p
         research_data = json.loads(result_text)
         research_points = research_data.get("research_points", [])
         
-        print(f"{GREEN}Generated {len(research_points)} research points{ENDC}")
+        logger.info(f"{GREEN}Generated {len(research_points)} research points{ENDC}")
         
         return research_points
     
     except Exception as e:
-        print(f"{RED}Error performing research with AI: {e}{ENDC}")
+        logger.info(f"{RED}Error performing research with AI: {e}{ENDC}")
         # Fall back to mock data if AI fails
-        print(f"{YELLOW}Falling back to mock research generation{ENDC}")
+        logger.info(f"{YELLOW}Falling back to mock research generation{ENDC}")
         
         # Mock research data
         mock_research = [
@@ -201,7 +203,7 @@ def perform_research_with_ai(openai_client, content_piece, keywords, strategic_p
 
 def save_research_to_database(supabase, content_id, research_points):
     """Save research data to the database."""
-    print(f"{BLUE}Saving research data to database...{ENDC}")
+    logger.info(f"{BLUE}Saving research data to database...{ENDC}")
     
     # Check if the research table exists
     try:
@@ -211,7 +213,7 @@ def save_research_to_database(supabase, content_id, research_points):
         table_exists = False
     
     if not table_exists:
-        print(f"{YELLOW}Research table doesn't exist yet. Creating it...{ENDC}")
+        logger.info(f"{YELLOW}Research table doesn't exist yet. Creating it...{ENDC}")
         # Create the research table if it doesn't exist
         try:
             # This will only work if you have appropriate permissions
@@ -233,11 +235,11 @@ def save_research_to_database(supabase, content_id, research_points):
             CREATE INDEX IF NOT EXISTS idx_research_type ON research(type);
             """
             
-            print(f"{YELLOW}Table creation via API not supported. Please create the table through the Supabase dashboard.{ENDC}")
-            print(f"{YELLOW}Will continue with mock data and update the content status.{ENDC}")
+            logger.info(f"{YELLOW}Table creation via API not supported. Please create the table through the Supabase dashboard.{ENDC}")
+            logger.info(f"{YELLOW}Will continue with mock data and update the content status.{ENDC}")
         except Exception as e:
-            print(f"{RED}Error creating research table: {e}{ENDC}")
-            print(f"{YELLOW}Please create the table through the Supabase dashboard.{ENDC}")
+            logger.info(f"{RED}Error creating research table: {e}{ENDC}")
+            logger.info(f"{YELLOW}Please create the table through the Supabase dashboard.{ENDC}")
     else:
         # Save research data
         for point in research_points:
@@ -252,18 +254,18 @@ def save_research_to_database(supabase, content_id, research_points):
             try:
                 response = supabase.table("research").insert(research_entry).execute()
                 if not response.data:
-                    print(f"{YELLOW}Failed to insert research point: {point['excerpt'][:50]}...{ENDC}")
+                    logger.info(f"{YELLOW}Failed to insert research point: {point['excerpt'][:50]}...{ENDC}")
                 else:
-                    print(f"{GREEN}Inserted research point: {point['excerpt'][:50]}...{ENDC}")
+                    logger.info(f"{GREEN}Inserted research point: {point['excerpt'][:50]}...{ENDC}")
             except Exception as e:
-                print(f"{RED}Error inserting research point: {e}{ENDC}")
+                logger.info(f"{RED}Error inserting research point: {e}{ENDC}")
     
     # Update content piece status
     try:
         supabase.table("content_pieces").update({"status": "researched"}).eq("id", content_id).execute()
-        print(f"{GREEN}Updated content piece status to 'researched'{ENDC}")
+        logger.info(f"{GREEN}Updated content piece status to 'researched'{ENDC}")
     except Exception as e:
-        print(f"{RED}Error updating content piece status: {e}{ENDC}")
+        logger.info(f"{RED}Error updating content piece status: {e}{ENDC}")
     
     # Create agent status entry
     try:
@@ -282,9 +284,9 @@ def save_research_to_database(supabase, content_id, research_points):
         }
         
         supabase.table("agent_status").insert(agent_status_data).execute()
-        print(f"{GREEN}Created agent status entry for research agent{ENDC}")
+        logger.info(f"{GREEN}Created agent status entry for research agent{ENDC}")
     except Exception as e:
-        print(f"{RED}Error creating agent status entry: {e}{ENDC}")
+        logger.info(f"{RED}Error creating agent status entry: {e}{ENDC}")
 
 def save_results_to_file(content_id, content_title, research_points):
     """Save research results to a file."""
@@ -300,7 +302,7 @@ def save_results_to_file(content_id, content_title, research_points):
     with open(filename, "w") as f:
         json.dump(results, f, indent=2)
     
-    print(f"{GREEN}Results saved to {filename}{ENDC}")
+    logger.info(f"{GREEN}Results saved to {filename}{ENDC}")
     
     return filename
 
@@ -310,8 +312,8 @@ def main():
     parser.add_argument("--no-ai", action="store_true", help="Disable AI and use mock data instead")
     args = parser.parse_args()
     
-    print(f"{BOLD}WordPress Content Generator - Research Agent{ENDC}")
-    print("=" * 60)
+    logger.info(f"{BOLD}WordPress Content Generator - Research Agent{ENDC}")
+    logger.info("=" * 60)
     
     # Connect to Supabase
     supabase = get_supabase_client()
@@ -321,28 +323,28 @@ def main():
     if not args.no_ai:
         try:
             openai_client = setup_openai()
-            print(f"{GREEN}Connected to OpenAI API{ENDC}")
+            logger.info(f"{GREEN}Connected to OpenAI API{ENDC}")
         except Exception as e:
-            print(f"{RED}Error connecting to OpenAI API: {e}{ENDC}")
-            print(f"{YELLOW}Falling back to mock data generation{ENDC}")
+            logger.info(f"{RED}Error connecting to OpenAI API: {e}{ENDC}")
+            logger.info(f"{YELLOW}Falling back to mock data generation{ENDC}")
             args.no_ai = True
     
     # Get the content piece
     content_piece = get_content_piece(supabase, args.content_id)
-    print(f"{GREEN}Retrieved content piece: {content_piece['title']}{ENDC}")
+    logger.info(f"{GREEN}Retrieved content piece: {content_piece['title']}{ENDC}")
     
     # Get keywords for the content piece
     keywords = get_content_keywords(supabase, content_piece['id'])
     if not keywords:
-        print(f"{RED}No keywords found for this content piece. Cannot proceed.{ENDC}")
+        logger.info(f"{RED}No keywords found for this content piece. Cannot proceed.{ENDC}")
         sys.exit(1)
     
-    print(f"{GREEN}Retrieved keywords: {keywords['focus_keyword']}{ENDC}")
+    logger.info(f"{GREEN}Retrieved keywords: {keywords['focus_keyword']}{ENDC}")
     
     # Get the strategic plan
     strategic_plan = get_strategic_plan(supabase, content_piece['strategic_plan_id'])
     if not strategic_plan:
-        print(f"{RED}No strategic plan found. Cannot proceed.{ENDC}")
+        logger.info(f"{RED}No strategic plan found. Cannot proceed.{ENDC}")
         sys.exit(1)
     
     # Perform research
@@ -380,12 +382,12 @@ def main():
                 "confidence": 0.82
             }
         ]
-        print(f"{YELLOW}Using mock data for research{ENDC}")
+        logger.info(f"{YELLOW}Using mock data for research{ENDC}")
     else:
         # Use OpenAI to generate research
         research_points = perform_research_with_ai(openai_client, content_piece, keywords, strategic_plan)
     
-    print(f"{GREEN}Generated {len(research_points)} research points{ENDC}")
+    logger.info(f"{GREEN}Generated {len(research_points)} research points{ENDC}")
     
     # Save results to file
     filename = save_results_to_file(content_piece['id'], content_piece['title'], research_points)
@@ -393,9 +395,9 @@ def main():
     # Save results to database
     save_research_to_database(supabase, content_piece['id'], research_points)
     
-    print(f"\n{BOLD}Research Complete!{ENDC}")
-    print(f"Generated {len(research_points)} research points for '{content_piece['title']}'")
-    print(f"You can view the results in {filename}")
+    logger.info(f"\n{BOLD}Research Complete!{ENDC}")
+    logger.info(f"Generated {len(research_points)} research points for '{content_piece['title']}'")
+    logger.info(f"You can view the results in {filename}")
     
     return 0
 

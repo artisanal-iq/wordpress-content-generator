@@ -15,6 +15,8 @@ from typing import Dict, List, Any
 from datetime import datetime
 
 from dotenv import load_dotenv
+
+from agents.shared.utils import logger
 from supabase import create_client
 import openai
 
@@ -34,7 +36,7 @@ def setup_openai():
     api_key = os.getenv("OPENAI_API_KEY")
     
     if not api_key:
-        print(f"{RED}Error: OPENAI_API_KEY must be set in .env file{ENDC}")
+        logger.info(f"{RED}Error: OPENAI_API_KEY must be set in .env file{ENDC}")
         sys.exit(1)
     
     # Set up OpenAI client
@@ -48,7 +50,7 @@ def get_supabase_client():
     key = os.getenv("SUPABASE_KEY")
     
     if not url or not key:
-        print(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
+        logger.info(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
         sys.exit(1)
     
     return create_client(url, key)
@@ -63,13 +65,13 @@ def get_content_piece(supabase, content_id=None):
             response = supabase.table("content_pieces").select("*").eq("status", "researched").limit(1).execute()
         
         if not response.data:
-            print(f"{RED}No content piece found{ENDC}")
+            logger.info(f"{RED}No content piece found{ENDC}")
             sys.exit(1)
         
         return response.data[0]
     
     except Exception as e:
-        print(f"{RED}Error retrieving content piece: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving content piece: {e}{ENDC}")
         sys.exit(1)
 
 def get_content_keywords(supabase, content_id):
@@ -78,13 +80,13 @@ def get_content_keywords(supabase, content_id):
         response = supabase.table("keywords").select("*").eq("content_id", content_id).execute()
         
         if not response.data:
-            print(f"{RED}No keywords found for content piece: {content_id}{ENDC}")
+            logger.info(f"{RED}No keywords found for content piece: {content_id}{ENDC}")
             return None
         
         return response.data[0]
     
     except Exception as e:
-        print(f"{RED}Error retrieving keywords: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving keywords: {e}{ENDC}")
         return None
 
 def get_content_research(supabase, content_id):
@@ -93,14 +95,14 @@ def get_content_research(supabase, content_id):
         response = supabase.table("research").select("*").eq("content_id", content_id).execute()
         
         if not response.data:
-            print(f"{YELLOW}No research found for content piece: {content_id}{ENDC}")
-            print(f"{YELLOW}Will use minimal research data.{ENDC}")
+            logger.info(f"{YELLOW}No research found for content piece: {content_id}{ENDC}")
+            logger.info(f"{YELLOW}Will use minimal research data.{ENDC}")
             return []
         
         return response.data
     
     except Exception as e:
-        print(f"{RED}Error retrieving research: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving research: {e}{ENDC}")
         return []
 
 def get_strategic_plan(supabase, plan_id):
@@ -109,13 +111,13 @@ def get_strategic_plan(supabase, plan_id):
         response = supabase.table("strategic_plans").select("*").eq("id", plan_id).execute()
         
         if not response.data:
-            print(f"{RED}No strategic plan found: {plan_id}{ENDC}")
+            logger.info(f"{RED}No strategic plan found: {plan_id}{ENDC}")
             return None
         
         return response.data[0]
     
     except Exception as e:
-        print(f"{RED}Error retrieving strategic plan: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving strategic plan: {e}{ENDC}")
         return None
 
 def get_seo_agent_output(supabase, content_id):
@@ -124,20 +126,20 @@ def get_seo_agent_output(supabase, content_id):
         response = supabase.table("agent_status").select("*").eq("content_id", content_id).eq("agent", "seo-agent").execute()
         
         if not response.data:
-            print(f"{YELLOW}No SEO agent data found for content piece: {content_id}{ENDC}")
+            logger.info(f"{YELLOW}No SEO agent data found for content piece: {content_id}{ENDC}")
             return None
         
         return response.data[0].get("output", {})
     
     except Exception as e:
-        print(f"{RED}Error retrieving SEO agent output: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving SEO agent output: {e}{ENDC}")
         return None
 
 def write_draft_with_ai(openai_client, content_piece, keywords, research, strategic_plan, seo_output):
     """
     Write a complete draft for a content piece using OpenAI.
     """
-    print(f"{BLUE}Writing draft for content piece: {content_piece['title']}{ENDC}")
+    logger.info(f"{BLUE}Writing draft for content piece: {content_piece['title']}{ENDC}")
     
     try:
         # Extract sections from SEO output if available
@@ -197,14 +199,14 @@ def write_draft_with_ai(openai_client, content_piece, keywords, research, strate
         # Extract the draft text
         draft_text = response.choices[0].message.content
         
-        print(f"{GREEN}Generated draft of approximately {len(draft_text.split())} words{ENDC}")
+        logger.info(f"{GREEN}Generated draft of approximately {len(draft_text.split())} words{ENDC}")
         
         return draft_text
     
     except Exception as e:
-        print(f"{RED}Error generating draft with AI: {e}{ENDC}")
+        logger.info(f"{RED}Error generating draft with AI: {e}{ENDC}")
         # Fall back to mock data if AI fails
-        print(f"{YELLOW}Falling back to mock draft generation{ENDC}")
+        logger.info(f"{YELLOW}Falling back to mock draft generation{ENDC}")
         
         # Mock draft with minimal placeholder text
         mock_draft = f"""
@@ -252,7 +254,7 @@ Share your results or questions in the comments below!
 
 def save_draft_to_database(supabase, content_id, draft_text):
     """Save draft to database."""
-    print(f"{BLUE}Saving draft to database...{ENDC}")
+    logger.info(f"{BLUE}Saving draft to database...{ENDC}")
     
     try:
         # Update content piece
@@ -261,7 +263,7 @@ def save_draft_to_database(supabase, content_id, draft_text):
             "draft_text": draft_text
         }).eq("id", content_id).execute()
         
-        print(f"{GREEN}Updated content piece status to 'drafted'{ENDC}")
+        logger.info(f"{GREEN}Updated content piece status to 'drafted'{ENDC}")
         
         # Create agent status entry
         agent_status_data = {
@@ -279,12 +281,12 @@ def save_draft_to_database(supabase, content_id, draft_text):
         }
         
         supabase.table("agent_status").insert(agent_status_data).execute()
-        print(f"{GREEN}Created agent status entry for draft writer agent{ENDC}")
+        logger.info(f"{GREEN}Created agent status entry for draft writer agent{ENDC}")
         
         return True
     
     except Exception as e:
-        print(f"{RED}Error saving draft to database: {e}{ENDC}")
+        logger.info(f"{RED}Error saving draft to database: {e}{ENDC}")
         return False
 
 def save_draft_to_file(content_id, content_title, draft_text):
@@ -294,7 +296,7 @@ def save_draft_to_file(content_id, content_title, draft_text):
     with open(filename, "w") as f:
         f.write(draft_text)
     
-    print(f"{GREEN}Draft saved to {filename}{ENDC}")
+    logger.info(f"{GREEN}Draft saved to {filename}{ENDC}")
     
     return filename
 
@@ -304,8 +306,8 @@ def main():
     parser.add_argument("--no-ai", action="store_true", help="Disable AI and use mock data instead")
     args = parser.parse_args()
     
-    print(f"{BOLD}WordPress Content Generator - Draft Writer Agent{ENDC}")
-    print("=" * 60)
+    logger.info(f"{BOLD}WordPress Content Generator - Draft Writer Agent{ENDC}")
+    logger.info("=" * 60)
     
     # Connect to Supabase
     supabase = get_supabase_client()
@@ -315,33 +317,33 @@ def main():
     if not args.no_ai:
         try:
             openai_client = setup_openai()
-            print(f"{GREEN}Connected to OpenAI API{ENDC}")
+            logger.info(f"{GREEN}Connected to OpenAI API{ENDC}")
         except Exception as e:
-            print(f"{RED}Error connecting to OpenAI API: {e}{ENDC}")
-            print(f"{YELLOW}Falling back to mock data generation{ENDC}")
+            logger.info(f"{RED}Error connecting to OpenAI API: {e}{ENDC}")
+            logger.info(f"{YELLOW}Falling back to mock data generation{ENDC}")
             args.no_ai = True
     
     # Get the content piece
     content_piece = get_content_piece(supabase, args.content_id)
-    print(f"{GREEN}Retrieved content piece: {content_piece['title']}{ENDC}")
+    logger.info(f"{GREEN}Retrieved content piece: {content_piece['title']}{ENDC}")
     
     # Get keywords for the content piece
     keywords = get_content_keywords(supabase, content_piece['id'])
     if not keywords:
-        print(f"{RED}No keywords found for this content piece. Cannot proceed.{ENDC}")
+        logger.info(f"{RED}No keywords found for this content piece. Cannot proceed.{ENDC}")
         sys.exit(1)
     
-    print(f"{GREEN}Retrieved keywords: {keywords['focus_keyword']}{ENDC}")
+    logger.info(f"{GREEN}Retrieved keywords: {keywords['focus_keyword']}{ENDC}")
     
     # Get the strategic plan
     strategic_plan = get_strategic_plan(supabase, content_piece['strategic_plan_id'])
     if not strategic_plan:
-        print(f"{RED}No strategic plan found. Cannot proceed.{ENDC}")
+        logger.info(f"{RED}No strategic plan found. Cannot proceed.{ENDC}")
         sys.exit(1)
     
     # Get research for the content piece
     research = get_content_research(supabase, content_piece['id'])
-    print(f"{GREEN}Retrieved {len(research)} research points{ENDC}")
+    logger.info(f"{GREEN}Retrieved {len(research)} research points{ENDC}")
     
     # Get SEO agent output for additional context (like suggested sections)
     seo_output = get_seo_agent_output(supabase, content_piece['id'])
@@ -389,7 +391,7 @@ By following the strategies outlined in this article, you can achieve better out
 Ready to implement these {keywords['focus_keyword']} strategies? Start with the first step today and track your progress. 
 Share your results or questions in the comments below!
 """
-        print(f"{YELLOW}Using mock data for draft{ENDC}")
+        logger.info(f"{YELLOW}Using mock data for draft{ENDC}")
     else:
         # Use OpenAI to generate draft
         draft_text = write_draft_with_ai(openai_client, content_piece, keywords, research, strategic_plan, seo_output)
@@ -400,9 +402,9 @@ Share your results or questions in the comments below!
     # Save draft to database
     save_draft_to_database(supabase, content_piece['id'], draft_text)
     
-    print(f"\n{BOLD}Draft Writing Complete!{ENDC}")
-    print(f"Created draft of approximately {len(draft_text.split())} words for '{content_piece['title']}'")
-    print(f"You can view the draft in {filename}")
+    logger.info(f"\n{BOLD}Draft Writing Complete!{ENDC}")
+    logger.info(f"Created draft of approximately {len(draft_text.split())} words for '{content_piece['title']}'")
+    logger.info(f"You can view the draft in {filename}")
     
     return 0
 

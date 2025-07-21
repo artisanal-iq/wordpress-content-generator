@@ -153,7 +153,7 @@ class TestResearchAgent(unittest.TestCase):
         mock_supabase.table.return_value.select.return_value.eq.assert_called_once_with("id", "test-plan-id")
         self.assertEqual(plan, self.mock_plan)
 
-    @patch("builtins.print")
+    @patch("research_agent.logger")
     def test_perform_research_with_ai(self, mock_print):
         """Test performing research with OpenAI."""
         mock_openai_client = MagicMock()
@@ -166,7 +166,7 @@ class TestResearchAgent(unittest.TestCase):
         mock_openai_client.chat.completions.create.assert_called_once()
         self.assertEqual(result, self.mock_research_points)
 
-    @patch("builtins.print")
+    @patch("research_agent.logger")
     def test_save_research_to_database(self, mock_print):
         """Test saving research to the database."""
         mock_supabase = MagicMock()

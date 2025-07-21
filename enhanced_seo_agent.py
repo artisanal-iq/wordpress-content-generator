@@ -16,6 +16,8 @@ from typing import Dict, List, Any
 from datetime import datetime
 
 from dotenv import load_dotenv
+
+from agents.shared.utils import logger
 from supabase import create_client
 import openai
 
@@ -35,7 +37,7 @@ def setup_openai():
     api_key = os.getenv("OPENAI_API_KEY")
     
     if not api_key:
-        print(f"{RED}Error: OPENAI_API_KEY must be set in .env file{ENDC}")
+        logger.info(f"{RED}Error: OPENAI_API_KEY must be set in .env file{ENDC}")
         sys.exit(1)
     
     # Set up OpenAI client
@@ -49,7 +51,7 @@ def get_supabase_client():
     key = os.getenv("SUPABASE_KEY")
     
     if not url or not key:
-        print(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
+        logger.info(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
         sys.exit(1)
     
     return create_client(url, key)
@@ -64,23 +66,23 @@ def get_strategic_plan(supabase, plan_id=None):
             response = supabase.table("strategic_plans").select("*").order("created_at", desc=True).limit(1).execute()
         
         if not response.data:
-            print(f"{RED}No strategic plan found{ENDC}")
+            logger.info(f"{RED}No strategic plan found{ENDC}")
             sys.exit(1)
         
         return response.data[0]
     
     except Exception as e:
-        print(f"{RED}Error retrieving strategic plan: {e}{ENDC}")
+        logger.info(f"{RED}Error retrieving strategic plan: {e}{ENDC}")
         sys.exit(1)
 
 def analyze_seo_keywords_with_ai(openai_client, plan: Dict[str, Any]):
     """
     Analyze the strategic plan and generate SEO keywords using OpenAI.
     """
-    print(f"{BLUE}Analyzing strategic plan for SEO keywords using AI...{ENDC}")
-    print(f"  Domain: {plan['domain']}")
-    print(f"  Audience: {plan['audience']}")
-    print(f"  Niche: {plan['niche']}")
+    logger.info(f"{BLUE}Analyzing strategic plan for SEO keywords using AI...{ENDC}")
+    logger.info(f"  Domain: {plan['domain']}")
+    logger.info(f"  Audience: {plan['audience']}")
+    logger.info(f"  Niche: {plan['niche']}")
     
     try:
         # Craft a prompt for OpenAI
@@ -118,14 +120,14 @@ def analyze_seo_keywords_with_ai(openai_client, plan: Dict[str, Any]):
         result_text = response.choices[0].message.content
         keywords = json.loads(result_text)
         
-        print(f"{GREEN}Generated {len(keywords['supporting_keywords'])} supporting keywords{ENDC}")
+        logger.info(f"{GREEN}Generated {len(keywords['supporting_keywords'])} supporting keywords{ENDC}")
         
         return keywords
     
     except Exception as e:
-        print(f"{RED}Error generating keywords with AI: {e}{ENDC}")
+        logger.info(f"{RED}Error generating keywords with AI: {e}{ENDC}")
         # Fall back to mock data if AI fails
-        print(f"{YELLOW}Falling back to mock keyword generation{ENDC}")
+        logger.info(f"{YELLOW}Falling back to mock keyword generation{ENDC}")
         
         keywords = {
             "focus_keyword": f"best {plan['niche']} guide",
@@ -152,7 +154,7 @@ def generate_content_ideas_with_ai(openai_client, plan: Dict[str, Any], keywords
     """
     Generate content ideas based on the strategic plan and keywords using OpenAI.
     """
-    print(f"{BLUE}Generating content ideas using AI...{ENDC}")
+    logger.info(f"{BLUE}Generating content ideas using AI...{ENDC}")
     
     try:
         # Craft a prompt for OpenAI
@@ -201,14 +203,14 @@ def generate_content_ideas_with_ai(openai_client, plan: Dict[str, Any], keywords
         if not content_ideas and isinstance(result_json, list):
             content_ideas = result_json
         
-        print(f"{GREEN}Generated {len(content_ideas)} content ideas{ENDC}")
+        logger.info(f"{GREEN}Generated {len(content_ideas)} content ideas{ENDC}")
         
         return content_ideas
     
     except Exception as e:
-        print(f"{RED}Error generating content ideas with AI: {e}{ENDC}")
+        logger.info(f"{RED}Error generating content ideas with AI: {e}{ENDC}")
         # Fall back to mock data if AI fails
-        print(f"{YELLOW}Falling back to mock content generation{ENDC}")
+        logger.info(f"{YELLOW}Falling back to mock content generation{ENDC}")
         
         content_ideas = [
             {
@@ -258,7 +260,7 @@ def generate_content_ideas_with_ai(openai_client, plan: Dict[str, Any], keywords
 
 def save_results_to_database(supabase, plan_id: str, keywords: Dict[str, Any], content_ideas: List[Dict[str, Any]]):
     """Save SEO analysis results to the database."""
-    print(f"{BLUE}Saving results to database...{ENDC}")
+    logger.info(f"{BLUE}Saving results to database...{ENDC}")
     
     try:
         # Create content pieces for each content idea
@@ -277,12 +279,12 @@ def save_results_to_database(supabase, plan_id: str, keywords: Dict[str, Any], c
             content_response = supabase.table("content_pieces").insert(content_piece).execute()
             
             if not content_response.data:
-                print(f"{RED}Failed to create content piece: {idea['title']}{ENDC}")
+                logger.info(f"{RED}Failed to create content piece: {idea['title']}{ENDC}")
                 continue
             
             content_id = content_response.data[0]["id"]
             created_content_pieces.append(content_id)
-            print(f"{GREEN}Created content piece: {idea['title']}{ENDC}")
+            logger.info(f"{GREEN}Created content piece: {idea['title']}{ENDC}")
             
             # Create keyword entry
             keyword_data = {
@@ -294,7 +296,7 @@ def save_results_to_database(supabase, plan_id: str, keywords: Dict[str, Any], c
             keyword_response = supabase.table("keywords").insert(keyword_data).execute()
             
             if not keyword_response.data:
-                print(f"{YELLOW}Failed to create keyword entry for: {idea['title']}{ENDC}")
+                logger.info(f"{YELLOW}Failed to create keyword entry for: {idea['title']}{ENDC}")
             
             # Create agent status entry
             agent_status_data = {
@@ -319,14 +321,14 @@ def save_results_to_database(supabase, plan_id: str, keywords: Dict[str, Any], c
             agent_response = supabase.table("agent_status").insert(agent_status_data).execute()
             
             if not agent_response.data:
-                print(f"{YELLOW}Failed to create agent status entry for: {idea['title']}{ENDC}")
+                logger.info(f"{YELLOW}Failed to create agent status entry for: {idea['title']}{ENDC}")
         
-        print(f"{GREEN}Successfully created {len(created_content_pieces)} content pieces{ENDC}")
+        logger.info(f"{GREEN}Successfully created {len(created_content_pieces)} content pieces{ENDC}")
         
         return created_content_pieces
     
     except Exception as e:
-        print(f"{RED}Error saving results to database: {e}{ENDC}")
+        logger.info(f"{RED}Error saving results to database: {e}{ENDC}")
         return []
 
 def save_results_to_file(plan_id: str, keywords: Dict[str, Any], content_ideas: List[Dict[str, Any]]):
@@ -343,7 +345,7 @@ def save_results_to_file(plan_id: str, keywords: Dict[str, Any], content_ideas: 
     with open(filename, "w") as f:
         json.dump(results, f, indent=2)
     
-    print(f"{GREEN}Results also saved to {filename}{ENDC}")
+    logger.info(f"{GREEN}Results also saved to {filename}{ENDC}")
     
     return filename
 
@@ -353,8 +355,8 @@ def main():
     parser.add_argument("--no-ai", action="store_true", help="Disable AI and use mock data instead")
     args = parser.parse_args()
     
-    print(f"{BOLD}WordPress Content Generator - Enhanced SEO Agent{ENDC}")
-    print("=" * 60)
+    logger.info(f"{BOLD}WordPress Content Generator - Enhanced SEO Agent{ENDC}")
+    logger.info("=" * 60)
     
     # Connect to Supabase
     supabase = get_supabase_client()
@@ -364,15 +366,15 @@ def main():
     if not args.no_ai:
         try:
             openai_client = setup_openai()
-            print(f"{GREEN}Connected to OpenAI API{ENDC}")
+            logger.info(f"{GREEN}Connected to OpenAI API{ENDC}")
         except Exception as e:
-            print(f"{RED}Error connecting to OpenAI API: {e}{ENDC}")
-            print(f"{YELLOW}Falling back to mock data generation{ENDC}")
+            logger.info(f"{RED}Error connecting to OpenAI API: {e}{ENDC}")
+            logger.info(f"{YELLOW}Falling back to mock data generation{ENDC}")
             args.no_ai = True
     
     # Get the strategic plan
     plan = get_strategic_plan(supabase, args.plan_id)
-    print(f"{GREEN}Retrieved strategic plan: {plan['domain']}{ENDC}")
+    logger.info(f"{GREEN}Retrieved strategic plan: {plan['domain']}{ENDC}")
     
     # Analyze for SEO keywords
     if args.no_ai:
@@ -395,12 +397,12 @@ def main():
                 f"{plan['niche']} best practices": 430
             }
         }
-        print(f"{YELLOW}Using mock data for keywords{ENDC}")
+        logger.info(f"{YELLOW}Using mock data for keywords{ENDC}")
     else:
         # Use OpenAI to generate keywords
         keywords = analyze_seo_keywords_with_ai(openai_client, plan)
     
-    print(f"{GREEN}Generated {len(keywords['supporting_keywords'])} supporting keywords{ENDC}")
+    logger.info(f"{GREEN}Generated {len(keywords['supporting_keywords'])} supporting keywords{ENDC}")
     
     # Generate content ideas
     if args.no_ai:
@@ -448,12 +450,12 @@ def main():
                 ]
             }
         ]
-        print(f"{YELLOW}Using mock data for content ideas{ENDC}")
+        logger.info(f"{YELLOW}Using mock data for content ideas{ENDC}")
     else:
         # Use OpenAI to generate content ideas
         content_ideas = generate_content_ideas_with_ai(openai_client, plan, keywords)
     
-    print(f"{GREEN}Generated {len(content_ideas)} content ideas{ENDC}")
+    logger.info(f"{GREEN}Generated {len(content_ideas)} content ideas{ENDC}")
     
     # Save results to file (for backup/viewing)
     filename = save_results_to_file(plan["id"], keywords, content_ideas)
@@ -461,9 +463,9 @@ def main():
     # Save results to database
     content_pieces = save_results_to_database(supabase, plan["id"], keywords, content_ideas)
     
-    print(f"\n{BOLD}SEO Analysis Complete!{ENDC}")
-    print(f"Created {len(content_pieces)} content pieces in the database")
-    print(f"You can also view the results in {filename}")
+    logger.info(f"\n{BOLD}SEO Analysis Complete!{ENDC}")
+    logger.info(f"Created {len(content_pieces)} content pieces in the database")
+    logger.info(f"You can also view the results in {filename}")
     
     return 0
 

@@ -216,7 +216,7 @@ In conclusion, test keyword is important for test audience.
         mock_supabase.table.return_value.select.return_value.eq.return_value.eq.assert_called_once_with("agent", "seo-agent")
         self.assertEqual(seo_output, self.mock_seo_output)
 
-    @patch("builtins.print")
+    @patch("draft_writer_agent.logger")
     def test_write_draft_with_ai(self, mock_print):
         """Test writing a draft with OpenAI."""
         mock_openai_client = MagicMock()
@@ -236,7 +236,7 @@ In conclusion, test keyword is important for test audience.
         mock_openai_client.chat.completions.create.assert_called_once()
         self.assertEqual(result, self.mock_draft_text)
 
-    @patch("builtins.print")
+    @patch("draft_writer_agent.logger")
     def test_save_draft_to_database(self, mock_print):
         """Test saving draft to the database."""
         mock_supabase = MagicMock()

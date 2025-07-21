@@ -17,7 +17,7 @@ Output:
 """
 
 import json
-import logging
+from agents.shared.utils import logger
 import sys
 from typing import Dict, Any, List
 
@@ -29,9 +29,6 @@ from ..shared.utils import (
     extract_keywords
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("seo-agent")
 
 # Define system prompt for keyword generation
 KEYWORD_SYSTEM_PROMPT = """
@@ -199,11 +196,11 @@ if __name__ == "__main__":
         try:
             input_json = json.loads(sys.argv[1])
             result = run(input_json)
-            print(json.dumps(result, indent=2))
+            logger.info(json.dumps(result, indent=2))
         except json.JSONDecodeError:
-            print("Error: Input must be valid JSON")
+            logger.info("Error: Input must be valid JSON")
             sys.exit(1)
     else:
-        print("Error: No input provided")
-        print("Usage: python -m agents.seo-agent.index '{\"domain\": \"example.com\", \"niche\": \"gardening\"}'")
+        logger.info("Error: No input provided")
+        logger.info("Usage: python -m agents.seo-agent.index '{\"domain\": \"example.com\", \"niche\": \"gardening\"}'")
         sys.exit(1)

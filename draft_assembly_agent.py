@@ -13,6 +13,8 @@ from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 from supabase import create_client
 
+from agents.shared.utils import logger
+
 # Load environment variables
 load_dotenv()
 
@@ -27,7 +29,7 @@ def get_supabase_client():
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY")
     if not url or not key:
-        print(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set{ENDC}")
+        logger.info(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set{ENDC}")
         sys.exit(1)
     return create_client(url, key)
 
@@ -36,7 +38,7 @@ def get_content_piece(supabase, content_id: str) -> Dict[str, Any]:
     """Fetch content piece data."""
     result = supabase.table("content_pieces").select("*").eq("id", content_id).execute()
     if not result.data:
-        print(f"{RED}Content piece {content_id} not found{ENDC}")
+        logger.info(f"{RED}Content piece {content_id} not found{ENDC}")
         sys.exit(1)
     return result.data[0]
 
@@ -93,7 +95,7 @@ def save_final_to_file(content_id: str, text: str) -> str:
     filename = f"final_{content_id[:8]}.md"
     with open(filename, "w") as f:
         f.write(text)
-    print(f"{GREEN}Saved final draft to {filename}{ENDC}")
+    logger.info(f"{GREEN}Saved final draft to {filename}{ENDC}")
     return filename
 
 
@@ -111,7 +113,7 @@ def main() -> int:
     save_final_text(supabase, piece["id"], final_text)
     save_final_to_file(piece["id"], final_text)
 
-    print(f"{BOLD}Draft assembly complete{ENDC}")
+    logger.info(f"{BOLD}Draft assembly complete{ENDC}")
     return 0
 
 

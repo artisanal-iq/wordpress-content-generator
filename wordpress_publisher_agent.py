@@ -24,6 +24,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from agents.shared.utils import logger
+
 import requests
 
 from agents.shared.markdown_utils import markdown_to_html
@@ -31,7 +33,7 @@ from agents.shared.markdown_utils import markdown_to_html
 try:
     from supabase import create_client
 except ImportError:
-    print("Error: Required packages not installed. Run 'pip install supabase requests'")
+    logger.info("Error: Required packages not installed. Run 'pip install supabase requests'")
     sys.exit(1)
 
 
@@ -41,7 +43,7 @@ def get_supabase_client():
     key = os.getenv("SUPABASE_KEY")
 
     if not url or not key:
-        print("Error: SUPABASE_URL and SUPABASE_KEY environment variables must be set")
+        logger.info("Error: SUPABASE_URL and SUPABASE_KEY environment variables must be set")
         sys.exit(1)
 
     return create_client(url, key)
@@ -54,7 +56,7 @@ def get_wordpress_credentials():
     wp_app_password = os.getenv("WORDPRESS_APP_PASSWORD")
 
     if not wp_url or not wp_user or not wp_app_password:
-        print(
+        logger.info(
             "Error: WORDPRESS_URL, WORDPRESS_USER, and WORDPRESS_APP_PASSWORD environment variables must be set"
         )
         sys.exit(1)
@@ -87,7 +89,7 @@ def get_content_piece(supabase, content_id=None):
             supabase.table("content_pieces").select("*").eq("id", content_id).execute()
         )
         if not result.data:
-            print(f"Error: Content piece with ID {content_id} not found")
+            logger.info(f"Error: Content piece with ID {content_id} not found")
             sys.exit(1)
         return result.data[0]
     else:
@@ -100,7 +102,7 @@ def get_content_piece(supabase, content_id=None):
             .execute()
         )
         if not result.data:
-            print("Error: No content pieces with status 'image_generated' found")
+            logger.info("Error: No content pieces with status 'image_generated' found")
             sys.exit(1)
         return result.data[0]
 
@@ -111,7 +113,7 @@ def get_content_keywords(supabase, content_id):
         supabase.table("keywords").select("*").eq("content_id", content_id).execute()
     )
     if not result.data:
-        print(f"Warning: No keywords found for content piece {content_id}")
+        logger.info(f"Warning: No keywords found for content piece {content_id}")
         return None
     return result.data[0]
 
@@ -120,7 +122,7 @@ def get_content_image(supabase, image_id):
     """Retrieve image data for a content piece."""
     result = supabase.table("images").select("*").eq("id", image_id).execute()
     if not result.data:
-        print(f"Warning: No image found with ID {image_id}")
+        logger.info(f"Warning: No image found with ID {image_id}")
         return None
     return result.data[0]
 
@@ -140,7 +142,7 @@ def upload_image_to_wordpress(wp_credentials, image_path, image_title):
     try:
         # Check if the image file exists
         if not Path(image_path).exists():
-            print(f"Error: Image file not found at {image_path}")
+            logger.info(f"Error: Image file not found at {image_path}")
             return None
 
         # Read the image file
@@ -159,7 +161,7 @@ def upload_image_to_wordpress(wp_credentials, image_path, image_title):
         response = requests.post(url, headers=headers, data=image_data, auth=auth)
 
         if response.status_code not in (200, 201):
-            print(f"Error uploading image: {response.status_code} - {response.text}")
+            logger.info(f"Error uploading image: {response.status_code} - {response.text}")
             return None
 
         # Get the media ID
@@ -167,14 +169,14 @@ def upload_image_to_wordpress(wp_credentials, image_path, image_title):
         media_id = media_data.get("id")
 
         if not media_id:
-            print("Error: Failed to get media ID from WordPress response")
+            logger.info("Error: Failed to get media ID from WordPress response")
             return None
 
-        print(f"Successfully uploaded image to WordPress with ID: {media_id}")
+        logger.info(f"Successfully uploaded image to WordPress with ID: {media_id}")
         return media_id
 
     except Exception as e:
-        print(f"Error uploading image to WordPress: {str(e)}")
+        logger.info(f"Error uploading image to WordPress: {str(e)}")
         return None
 
 
@@ -240,15 +242,15 @@ def create_wordpress_post(
 
         # If in preview mode, just print the post data and return
         if preview:
-            print("\n=== WordPress Post Preview ===")
-            print(f"Title: {title}")
-            print(f"Slug: {slug}")
-            print(f"Status: publish")
-            print(f"Featured Image ID: {media_id}")
-            print(f"Tags: {tags}")
-            print(f"Categories: {categories}")
-            print(f"Content (first 200 chars): {content[:200]}...")
-            print("=== End Preview ===\n")
+            logger.info("\n=== WordPress Post Preview ===")
+            logger.info(f"Title: {title}")
+            logger.info(f"Slug: {slug}")
+            logger.info(f"Status: publish")
+            logger.info(f"Featured Image ID: {media_id}")
+            logger.info(f"Tags: {tags}")
+            logger.info(f"Categories: {categories}")
+            logger.info(f"Content (first 200 chars): {content[:200]}...")
+            logger.info("=== End Preview ===\n")
             return None, None
 
         # Prepare the request
@@ -260,7 +262,7 @@ def create_wordpress_post(
         response = requests.post(url, headers=headers, json=post_data, auth=auth)
 
         if response.status_code not in (200, 201):
-            print(f"Error creating post: {response.status_code} - {response.text}")
+            logger.info(f"Error creating post: {response.status_code} - {response.text}")
             return None, None
 
         # Get the post ID and URL
@@ -269,15 +271,15 @@ def create_wordpress_post(
         post_url = post_data.get("link")
 
         if not post_id or not post_url:
-            print("Error: Failed to get post ID or URL from WordPress response")
+            logger.info("Error: Failed to get post ID or URL from WordPress response")
             return None, None
 
-        print(f"Successfully created WordPress post with ID: {post_id}")
-        print(f"Post URL: {post_url}")
+        logger.info(f"Successfully created WordPress post with ID: {post_id}")
+        logger.info(f"Post URL: {post_url}")
         return post_id, post_url
 
     except Exception as e:
-        print(f"Error creating WordPress post: {str(e)}")
+        logger.info(f"Error creating WordPress post: {str(e)}")
         return None, None
 
 
@@ -314,14 +316,14 @@ def get_or_create_tag(wp_credentials, tag_name):
         response = requests.post(url, headers=headers, json=tag_data, auth=auth)
 
         if response.status_code not in (200, 201):
-            print(f"Error creating tag: {response.status_code} - {response.text}")
+            logger.info(f"Error creating tag: {response.status_code} - {response.text}")
             return None
 
         tag_data = response.json()
         return tag_data.get("id")
 
     except Exception as e:
-        print(f"Error getting or creating tag: {str(e)}")
+        logger.info(f"Error getting or creating tag: {str(e)}")
         return None
 
 
@@ -368,13 +370,13 @@ def update_content_piece_status(supabase, content_id, post_id, post_url):
             }
         ).execute()
 
-        print(
+        logger.info(
             f"Successfully updated content piece status to 'published' for ID: {content_id}"
         )
         return True
 
     except Exception as e:
-        print(f"Error updating content piece status: {str(e)}")
+        logger.info(f"Error updating content piece status: {str(e)}")
 
         # Log error in agent status
         try:
@@ -393,7 +395,7 @@ def update_content_piece_status(supabase, content_id, post_id, post_url):
                 }
             ).execute()
         except Exception as log_error:
-            print(f"Error logging agent status: {str(log_error)}")
+            logger.info(f"Error logging agent status: {str(log_error)}")
 
         return False
 
@@ -422,7 +424,7 @@ def main():
     content_piece = get_content_piece(supabase, args.content_id)
     content_id = content_piece["id"]
 
-    print(f"Processing content piece: {content_piece['title']} (ID: {content_id})")
+    logger.info(f"Processing content piece: {content_piece['title']} (ID: {content_id})")
 
     # Get keywords for tags
     keywords = get_content_keywords(supabase, content_id)
@@ -451,15 +453,15 @@ def main():
 
     # If in preview mode, exit here
     if args.preview:
-        print("Preview mode: Post was not published to WordPress")
+        logger.info("Preview mode: Post was not published to WordPress")
         return
 
     # Update content piece status
     if post_id and post_url:
         update_content_piece_status(supabase, content_id, post_id, post_url)
-        print("WordPress Publisher Agent completed successfully")
+        logger.info("WordPress Publisher Agent completed successfully")
     else:
-        print("Error: Failed to publish content to WordPress")
+        logger.info("Error: Failed to publish content to WordPress")
         sys.exit(1)
 
 

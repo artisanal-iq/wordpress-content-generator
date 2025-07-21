@@ -17,6 +17,8 @@ from typing import Dict, List, Any
 from dotenv import load_dotenv
 from supabase import create_client
 
+from agents.shared.utils import logger
+
 # ANSI colors
 GREEN = "\033[92m"
 RED = "\033[91m"
@@ -34,7 +36,7 @@ def get_supabase_client():
     key = os.getenv("SUPABASE_KEY")
     
     if not url or not key:
-        print(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
+        logger.info(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set in .env file{ENDC}")
         sys.exit(1)
     
     return create_client(url, key)
@@ -53,16 +55,16 @@ def create_strategic_plan(supabase_client, domain, audience, tone, niche, goal):
         response = supabase_client.table("strategic_plans").insert(plan).execute()
         
         if not response.data:
-            print(f"{RED}Failed to create strategic plan{ENDC}")
+            logger.info(f"{RED}Failed to create strategic plan{ENDC}")
             return None
         
         plan_id = response.data[0]["id"]
-        print(f"{GREEN}Created strategic plan: {plan_id}{ENDC}")
+        logger.info(f"{GREEN}Created strategic plan: {plan_id}{ENDC}")
         
         return plan_id
     
     except Exception as e:
-        print(f"{RED}Error creating strategic plan: {e}{ENDC}")
+        logger.info(f"{RED}Error creating strategic plan: {e}{ENDC}")
         return None
 
 def run_seo_agent(plan_id, supabase_client, use_ai=False):
@@ -76,8 +78,8 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
     Returns:
         list[str]: IDs of created content pieces.
     """
-    print(f"{BLUE}Running SEO agent for plan: {plan_id}{ENDC}")
-    print(f"DEBUG: Running SEO agent with plan_id={plan_id}")
+    logger.info(f"{BLUE}Running SEO agent for plan: {plan_id}{ENDC}")
+    logger.info(f"DEBUG: Running SEO agent with plan_id={plan_id}")
     
     cmd = ["python", "enhanced_seo_agent.py", "--plan-id", plan_id]
     
@@ -86,14 +88,14 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
     
     try:
         process = subprocess.run(cmd, capture_output=True, text=True)
-        print(f"DEBUG: SEO agent process completed with return code: {process.returncode}")
+        logger.info(f"DEBUG: SEO agent process completed with return code: {process.returncode}")
         
         if process.returncode != 0:
-            print(f"{RED}SEO agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}SEO agent failed with code {process.returncode}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return []
         
-        print(f"{GREEN}SEO agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}SEO agent completed successfully{ENDC}")
         
         # Extract content piece IDs from the output
         content_pieces = []
@@ -110,76 +112,76 @@ def run_seo_agent(plan_id, supabase_client, use_ai=False):
                 continue
         
         # Manually run the query for content pieces
-        print("DEBUG: About to query database for content pieces")
+        logger.info("DEBUG: About to query database for content pieces")
         try:
             # This is where the error happens, let's try a different approach
             query = f"SELECT id FROM content_pieces WHERE strategic_plan_id = '{plan_id}'"
-            print(f"DEBUG: Using query: {query}")
+            logger.info(f"DEBUG: Using query: {query}")
             
             # Execute the query using raw SQL
             response = supabase_client.rpc('select_content_pieces_by_plan', {"plan_id_param": plan_id}).execute()
             
             # If raw SQL doesn't work, try the higher-level method
             if not response or not response.data:
-                print("DEBUG: Raw SQL failed, trying higher-level method")
+                logger.info("DEBUG: Raw SQL failed, trying higher-level method")
                 response = supabase_client.table("content_pieces").select("id").eq("strategic_plan_id", plan_id).execute()
             
             if response.data:
                 content_pieces = [item["id"] for item in response.data]
-                print(f"DEBUG: Retrieved content_pieces: {content_pieces}")
-                print(f"{GREEN}Found {len(content_pieces)} content pieces in database{ENDC}")
+                logger.info(f"DEBUG: Retrieved content_pieces: {content_pieces}")
+                logger.info(f"{GREEN}Found {len(content_pieces)} content pieces in database{ENDC}")
             else:
-                print(f"{YELLOW}No content pieces found in database for plan: {plan_id}{ENDC}")
+                logger.info(f"{YELLOW}No content pieces found in database for plan: {plan_id}{ENDC}")
                 
                 # Let's manually call the enhanced_seo_agent to check the standard output
-                print("DEBUG: Trying to run SEO agent directly to see output")
+                logger.info("DEBUG: Trying to run SEO agent directly to see output")
                 direct_output = subprocess.run(["python", "enhanced_seo_agent.py", "--plan-id", plan_id, "--no-ai"], 
                                             capture_output=False, text=True)
                 
                 # Try to read the generated JSON file
-                print("DEBUG: Checking for JSON output files")
+                logger.info("DEBUG: Checking for JSON output files")
                 json_files = list(Path(".").glob(f"seo_analysis_*.json"))
                 for file in json_files:
-                    print(f"DEBUG: Found JSON file: {file}")
+                    logger.info(f"DEBUG: Found JSON file: {file}")
                 
         except Exception as e:
-            print(f"{RED}Error retrieving content pieces: {e}{ENDC}")
-            print(f"DEBUG: Exception details: {str(e)}")
+            logger.info(f"{RED}Error retrieving content pieces: {e}{ENDC}")
+            logger.info(f"DEBUG: Exception details: {str(e)}")
             
             # As a fallback, let's try to find content pieces by a different method
-            print("DEBUG: Trying alternate method to find content pieces")
+            logger.info("DEBUG: Trying alternate method to find content pieces")
             try:
                 # Get all content pieces and filter manually
                 response = supabase_client.table("content_pieces").select("*").execute()
                 if response.data:
-                    print(f"DEBUG: Found {len(response.data)} total content pieces")
+                    logger.info(f"DEBUG: Found {len(response.data)} total content pieces")
                     for item in response.data:
-                        print(f"DEBUG: Content piece {item.get('id')} has plan ID {item.get('strategic_plan_id')}")
+                        logger.info(f"DEBUG: Content piece {item.get('id')} has plan ID {item.get('strategic_plan_id')}")
                         if item.get('strategic_plan_id') == plan_id:
                             content_pieces.append(item.get('id'))
                     
                     if content_pieces:
-                        print(f"DEBUG: Manually filtered content pieces: {content_pieces}")
-                        print(f"{GREEN}Found {len(content_pieces)} content pieces in database{ENDC}")
+                        logger.info(f"DEBUG: Manually filtered content pieces: {content_pieces}")
+                        logger.info(f"{GREEN}Found {len(content_pieces)} content pieces in database{ENDC}")
             except Exception as e2:
-                print(f"DEBUG: Alternate method also failed: {str(e2)}")
+                logger.info(f"DEBUG: Alternate method also failed: {str(e2)}")
         
         # Last resort - make up some content IDs for testing
         if not content_pieces:
-            print("DEBUG: No content pieces found through any method. Using the most recent content piece for testing.")
+            logger.info("DEBUG: No content pieces found through any method. Using the most recent content piece for testing.")
             try:
                 response = supabase_client.table("content_pieces").select("id").order('created_at', desc=True).limit(1).execute()
                 if response.data:
                     content_pieces = [response.data[0]['id']]
-                    print(f"DEBUG: Using most recent content piece: {content_pieces[0]}")
+                    logger.info(f"DEBUG: Using most recent content piece: {content_pieces[0]}")
             except Exception as e:
-                print(f"DEBUG: Even last resort failed: {str(e)}")
+                logger.info(f"DEBUG: Even last resort failed: {str(e)}")
                 
         return content_pieces
     
     except Exception as e:
-        print(f"{RED}Error running SEO agent: {e}{ENDC}")
-        print(f"DEBUG: Exception in run_seo_agent: {str(e)}")
+        logger.info(f"{RED}Error running SEO agent: {e}{ENDC}")
+        logger.info(f"DEBUG: Exception in run_seo_agent: {str(e)}")
         return []
 
 def run_research_agent(content_id, supabase_client, use_ai=False):
@@ -193,7 +195,7 @@ def run_research_agent(content_id, supabase_client, use_ai=False):
     Returns:
         bool: True on success, False on failure.
     """
-    print(f"{BLUE}Running research agent for content: {content_id}{ENDC}")
+    logger.info(f"{BLUE}Running research agent for content: {content_id}{ENDC}")
     
     cmd = ["python", "research_agent.py", "--content-id", content_id]
     
@@ -204,15 +206,15 @@ def run_research_agent(content_id, supabase_client, use_ai=False):
         process = subprocess.run(cmd, capture_output=True, text=True)
         
         if process.returncode != 0:
-            print(f"{RED}Research agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}Research agent failed with code {process.returncode}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return False
         
-        print(f"{GREEN}Research agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}Research agent completed successfully{ENDC}")
         return True
     
     except Exception as e:
-        print(f"{RED}Error running research agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running research agent: {e}{ENDC}")
         return False
 
 def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
@@ -226,7 +228,7 @@ def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
     Returns:
         bool: True on success, False on failure.
     """
-    print(f"{BLUE}Running draft writer agent for content: {content_id}{ENDC}")
+    logger.info(f"{BLUE}Running draft writer agent for content: {content_id}{ENDC}")
     
     cmd = ["python", "draft_writer_agent.py", "--content-id", content_id]
     
@@ -237,21 +239,21 @@ def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
         process = subprocess.run(cmd, capture_output=True, text=True)
         
         if process.returncode != 0:
-            print(f"{RED}Draft writer agent failed with code {process.returncode}{ENDC}")
-            print(f"{RED}Error: {process.stderr}{ENDC}")
+            logger.info(f"{RED}Draft writer agent failed with code {process.returncode}{ENDC}")
+            logger.info(f"{RED}Error: {process.stderr}{ENDC}")
             return False
         
-        print(f"{GREEN}Draft writer agent completed successfully{ENDC}")
+        logger.info(f"{GREEN}Draft writer agent completed successfully{ENDC}")
         return True
     
     except Exception as e:
-        print(f"{RED}Error running draft writer agent: {e}{ENDC}")
+        logger.info(f"{RED}Error running draft writer agent: {e}{ENDC}")
         return False
 
 def full_pipeline(args):
     """Run the full pipeline from strategic plan to research."""
-    print(f"{BOLD}WordPress Content Generator - Full Pipeline{ENDC}")
-    print("=" * 60)
+    logger.info(f"{BOLD}WordPress Content Generator - Full Pipeline{ENDC}")
+    logger.info("=" * 60)
     
     # Connect to Supabase
     supabase_client = get_supabase_client()
@@ -269,28 +271,28 @@ def full_pipeline(args):
         plan_id = create_strategic_plan(supabase_client, domain, audience, tone, niche, goal)
         
         if not plan_id:
-            print(f"{RED}Failed to create strategic plan. Cannot proceed.{ENDC}")
+            logger.info(f"{RED}Failed to create strategic plan. Cannot proceed.{ENDC}")
             return 1
     
     # Check if we have a plan ID
     if not plan_id:
-        print(f"{RED}No strategic plan ID provided. Use --plan-id or --create-plan{ENDC}")
+        logger.info(f"{RED}No strategic plan ID provided. Use --plan-id or --create-plan{ENDC}")
         return 1
     
     # Step 1: Run the SEO agent
-    print(f"{BOLD}Step 1: Running SEO Agent{ENDC}")
+    logger.info(f"{BOLD}Step 1: Running SEO Agent{ENDC}")
     content_pieces = run_seo_agent(plan_id, supabase_client, not args.no_ai)
     
     if not content_pieces:
-        print(f"{RED}No content pieces generated. Cannot proceed.{ENDC}")
+        logger.info(f"{RED}No content pieces generated. Cannot proceed.{ENDC}")
         return 1
     
     # Step 2: Run the research agent for each content piece
-    print(f"{BOLD}Step 2: Running Research Agent for {len(content_pieces)} content pieces{ENDC}")
+    logger.info(f"{BOLD}Step 2: Running Research Agent for {len(content_pieces)} content pieces{ENDC}")
     
     research_success_count = 0
     for i, content_id in enumerate(content_pieces):
-        print(f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Research Agent{ENDC}")
+        logger.info(f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Research Agent{ENDC}")
         
         if run_research_agent(content_id, supabase_client, not args.no_ai):
             research_success_count += 1
@@ -300,11 +302,11 @@ def full_pipeline(args):
             time.sleep(1)
     
     # Step 3: Run the draft writer agent for each content piece
-    print(f"{BOLD}Step 3: Running Draft Writer Agent for {len(content_pieces)} content pieces{ENDC}")
+    logger.info(f"{BOLD}Step 3: Running Draft Writer Agent for {len(content_pieces)} content pieces{ENDC}")
     
     draft_success_count = 0
     for i, content_id in enumerate(content_pieces):
-        print(f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Draft Writer Agent{ENDC}")
+        logger.info(f"{BLUE}Processing content piece {i+1} of {len(content_pieces)} with Draft Writer Agent{ENDC}")
         
         if run_draft_writer_agent(content_id, supabase_client, not args.no_ai):
             draft_success_count += 1
@@ -314,12 +316,12 @@ def full_pipeline(args):
             time.sleep(1)
     
     # Summary
-    print("\n" + "=" * 60)
-    print(f"{BOLD}Pipeline Summary:{ENDC}")
-    print(f"Strategic Plan: {plan_id}")
-    print(f"Content Pieces: {len(content_pieces)} generated")
-    print(f"Research: {research_success_count} of {len(content_pieces)} completed")
-    print(f"Draft Writing: {draft_success_count} of {len(content_pieces)} completed")
+    logger.info("\n" + "=" * 60)
+    logger.info(f"{BOLD}Pipeline Summary:{ENDC}")
+    logger.info(f"Strategic Plan: {plan_id}")
+    logger.info(f"Content Pieces: {len(content_pieces)} generated")
+    logger.info(f"Research: {research_success_count} of {len(content_pieces)} completed")
+    logger.info(f"Draft Writing: {draft_success_count} of {len(content_pieces)} completed")
     
     return 0
 
