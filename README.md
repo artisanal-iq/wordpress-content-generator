@@ -2,7 +2,7 @@
 
 An autonomous, agent-based system that plans, writes, edits, illustrates and publishes long-form, SEO-optimised articles directly to WordPress.
 
-> **Status:** Sprint 2 in progress – new `site_scaffold_agent` introduced and orchestrator auto‑run features under active development.
+> **Status:** Sprint 2 in progress – `site_scaffold_agent` ready and orchestrator auto‑run loop implemented.
 
 ---
 
