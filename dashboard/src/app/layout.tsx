@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FiHome, FiFileText, FiTarget, FiSettings, FiMenu, FiX } from "react-icons/fi";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import supabase from "@/lib/supabase";
 import { Providers } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -33,10 +34,29 @@ function SidebarLink({ href, icon, children, isMobileMenuOpen, setMobileMenuOpen
   );
 }
 
-function Sidebar({ isMobileMenuOpen, setMobileMenuOpen }: { 
+function Sidebar({ isMobileMenuOpen, setMobileMenuOpen }: {
   isMobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
 }) {
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchRole() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        setRole(profile?.role || 'editor');
+      }
+    }
+    fetchRole();
+  }, []);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -86,9 +106,16 @@ function Sidebar({ isMobileMenuOpen, setMobileMenuOpen }: {
             <SidebarLink href="/plans" icon={<FiTarget />} isMobileMenuOpen={isMobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}>
               Strategic Plans
             </SidebarLink>
-            <SidebarLink href="/settings" icon={<FiSettings />} isMobileMenuOpen={isMobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}>
-              Settings
-            </SidebarLink>
+            {role === 'admin' && (
+              <SidebarLink
+                href="/settings"
+                icon={<FiSettings />}
+                isMobileMenuOpen={isMobileMenuOpen}
+                setMobileMenuOpen={setMobileMenuOpen}
+              >
+                Settings
+              </SidebarLink>
+            )}
           </nav>
           
           {/* Footer */}
