@@ -11,7 +11,8 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
-from supabase import create_client
+
+from agents.shared.utils import get_supabase_client
 
 # Load environment variables
 load_dotenv()
@@ -20,16 +21,6 @@ GREEN = "\033[92m"
 RED = "\033[91m"
 BOLD = "\033[1m"
 ENDC = "\033[0m"
-
-
-def get_supabase_client():
-    """Return configured Supabase client."""
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
-    if not url or not key:
-        print(f"{RED}Error: SUPABASE_URL and SUPABASE_KEY must be set{ENDC}")
-        sys.exit(1)
-    return create_client(url, key)
 
 
 def get_content_piece(supabase, content_id: str) -> Dict[str, Any]:
@@ -43,7 +34,9 @@ def get_content_piece(supabase, content_id: str) -> Dict[str, Any]:
 
 def get_headline(supabase, content_id: str) -> Optional[Dict[str, Any]]:
     """Fetch headline record if available."""
-    result = supabase.table("headlines").select("*").eq("content_id", content_id).execute()
+    result = (
+        supabase.table("headlines").select("*").eq("content_id", content_id).execute()
+    )
     return result.data[0] if result.data else None
 
 
@@ -53,7 +46,11 @@ def get_hooks(supabase, content_id: str) -> Optional[Dict[str, Any]]:
     return result.data[0] if result.data else None
 
 
-def assemble_content(piece: Dict[str, Any], headline: Optional[Dict[str, Any]], hooks: Optional[Dict[str, Any]]) -> str:
+def assemble_content(
+    piece: Dict[str, Any],
+    headline: Optional[Dict[str, Any]],
+    hooks: Optional[Dict[str, Any]],
+) -> str:
     """Merge line-edited draft with headline and hooks."""
     title = piece.get("title", "")
     if headline and headline.get("selected_title"):
@@ -72,20 +69,24 @@ def assemble_content(piece: Dict[str, Any], headline: Optional[Dict[str, Any]], 
 
 def save_final_text(supabase, content_id: str, text: str) -> None:
     """Persist final article to database and log status."""
-    supabase.table("content_pieces").update({
-        "final_text": text,
-        "status": "assembled",
-        "updated_at": datetime.utcnow().isoformat(),
-    }).eq("id", content_id).execute()
-    supabase.table("agent_status").insert({
-        "id": str(uuid.uuid4()),
-        "content_id": content_id,
-        "agent": "draft-assembly-agent",
-        "status": "done",
-        "input": {"content_id": content_id},
-        "output": {"length": len(text)},
-        "created_at": datetime.utcnow().isoformat(),
-    }).execute()
+    supabase.table("content_pieces").update(
+        {
+            "final_text": text,
+            "status": "assembled",
+            "updated_at": datetime.utcnow().isoformat(),
+        }
+    ).eq("id", content_id).execute()
+    supabase.table("agent_status").insert(
+        {
+            "id": str(uuid.uuid4()),
+            "content_id": content_id,
+            "agent": "draft-assembly-agent",
+            "status": "done",
+            "input": {"content_id": content_id},
+            "output": {"length": len(text)},
+            "created_at": datetime.utcnow().isoformat(),
+        }
+    ).execute()
 
 
 def save_final_to_file(content_id: str, text: str) -> str:
