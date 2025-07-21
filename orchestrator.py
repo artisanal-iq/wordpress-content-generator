@@ -12,10 +12,12 @@ import sys
 import time
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 from supabase import create_client
+
+from agents.shared.utils import create_agent_task, update_agent_status
 
 # ANSI colors
 GREEN = "\033[92m"
@@ -27,6 +29,22 @@ BOLD = "\033[1m"
 
 # Load environment variables
 load_dotenv()
+
+# Mapping of pipeline order. Used by auto-run loop to enqueue next agent.
+NEXT_AGENT_MAP = {
+    "seo-agent": "research-agent",
+    "research-agent": "draft-writer-agent",
+    "draft-writer-agent": "flow-editor-agent",
+    "flow-editor-agent": "line-editor-agent",
+    "line-editor-agent": "image-generator-agent",
+    "image-generator-agent": "wordpress-publisher-agent",
+    "wordpress-publisher-agent": None,
+}
+
+
+def get_next_agent(agent_name: str) -> Optional[str]:
+    """Return the next agent in the pipeline."""
+    return NEXT_AGENT_MAP.get(agent_name)
 
 
 def get_supabase_client():
@@ -387,6 +405,50 @@ def run_draft_writer_agent(content_id, supabase_client, use_ai=False):
         return False
 
 
+# Mapping of agent name to function used by the auto-run loop
+AGENT_FUNCTIONS = {
+    "seo-agent": run_seo_agent,
+    "research-agent": run_research_agent,
+    "draft-writer-agent": run_draft_writer_agent,
+    "flow-editor-agent": run_flow_editor_agent,
+    "line-editor-agent": run_line_editor_agent,
+    "image-generator-agent": run_image_generator_agent,
+    "wordpress-publisher-agent": run_wordpress_publisher_agent,
+}
+
+
+def process_task(task: Dict[str, Any], supabase_client, use_ai: bool = True) -> None:
+    """Execute an agent task and queue the next one if successful."""
+    task_id = task["id"]
+    agent = task["agent"]
+    content_id = task.get("content_id")
+
+    update_agent_status(task_id, "processing", supabase=supabase_client)
+
+    runner = AGENT_FUNCTIONS.get(agent)
+    success = False
+    if runner:
+        if agent == "seo-agent":
+            success = bool(runner(task.get("plan_id", content_id), supabase_client, use_ai))
+        else:
+            success = bool(runner(content_id, supabase_client, use_ai))
+
+    if success:
+        update_agent_status(task_id, "done", supabase=supabase_client)
+        next_agent = get_next_agent(agent)
+        if next_agent:
+            create_agent_task(next_agent, content_id, {}, supabase_client)
+    else:
+        retry_count = task.get("retry_count", 0) + 1
+        status = "error" if retry_count >= 3 else "queued"
+        update_agent_status(
+            task_id,
+            status,
+            errors=[f"{agent}_failed"],
+            supabase=supabase_client,
+        )
+
+
 # --------------------------------------------------------------------------- #
 # Content Piece Processor                                                     #
 # --------------------------------------------------------------------------- #
@@ -591,6 +653,25 @@ def full_pipeline(args):
     return 0
 
 
+def loop_mode(args):
+    """Continuously poll agent_status and execute queued tasks."""
+    supabase_client = get_supabase_client()
+    interval = int(os.getenv("ORCHESTRATOR_INTERVAL", "30"))
+
+    while True:
+        response = (
+            supabase_client.table("agent_status")
+            .select("*")
+            .eq("status", "queued")
+            .execute()
+        )
+
+        for task in response.data or []:
+            process_task(task, supabase_client, not args.no_ai)
+
+        time.sleep(interval)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="WordPress Content Generator Orchestrator"
@@ -607,8 +688,17 @@ def main():
     parser.add_argument(
         "--no-ai", action="store_true", help="Disable AI and use mock data instead"
     )
+    parser.add_argument(
+        "--loop",
+        action="store_true",
+        help="Continuously poll agent_status for queued tasks",
+    )
 
     args = parser.parse_args()
+
+    if args.loop:
+        loop_mode(args)
+        return 0
 
     return full_pipeline(args)
 
