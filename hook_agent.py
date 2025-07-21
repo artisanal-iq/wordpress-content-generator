@@ -17,32 +17,15 @@ from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 try:
-    import openai
-    from supabase import create_client
+    import openai  # noqa: F401
 except ImportError:  # pragma: no cover - handled in tests
     openai = None  # type: ignore
 
+from agents.shared.utils import get_supabase_client, setup_openai
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def setup_openai():
-    """Initialise OpenAI client from environment variables."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise EnvironmentError("OPENAI_API_KEY not set")
-    return openai.OpenAI(api_key=api_key)
-
-
-def get_supabase_client():
-    """Return a Supabase client using env vars."""
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
-    if not url or not key:
-        raise EnvironmentError("SUPABASE_URL and SUPABASE_KEY must be set")
-    return create_client(url, key)
 
 
 def get_content_piece(supabase, content_id: str) -> Dict[str, Any]:

@@ -50,7 +50,7 @@ class TestHookAgent(unittest.TestCase):
     @patch("os.getenv")
     def test_get_supabase_client(self, mock_getenv):
         mock_getenv.side_effect = lambda x: "url" if x == "SUPABASE_URL" else "key"
-        with patch("hook_agent.create_client") as mock_create:
+        with patch("agents.shared.utils.create_client") as mock_create:
             mock_create.return_value = "client"
             client = get_supabase_client()
             mock_create.assert_called_once_with("url", "key")

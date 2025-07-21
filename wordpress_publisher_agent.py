@@ -29,22 +29,12 @@ import requests
 from agents.shared.markdown_utils import markdown_to_html
 
 try:
-    from supabase import create_client
+    from supabase import create_client  # noqa: F401
 except ImportError:
     print("Error: Required packages not installed. Run 'pip install supabase requests'")
     sys.exit(1)
 
-
-def get_supabase_client():
-    """Initialize Supabase client with URL and key from environment variables."""
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
-
-    if not url or not key:
-        print("Error: SUPABASE_URL and SUPABASE_KEY environment variables must be set")
-        sys.exit(1)
-
-    return create_client(url, key)
+from agents.shared.utils import get_supabase_client
 
 
 def get_wordpress_credentials():
