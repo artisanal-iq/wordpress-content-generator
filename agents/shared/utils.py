@@ -18,7 +18,7 @@ import openai
 import requests
 import tiktoken
 from dotenv import load_dotenv
-from slugify import slugify
+from slugify import slugify as _slugify
 from supabase import Client, create_client
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -125,13 +125,18 @@ def count_tokens(text: str, model: str = "gpt-4") -> int:
 
 
 # Text processing utilities
+def slugify(text: str) -> str:
+    """Convert text to a URL-friendly slug."""
+    return _slugify(text)
+
+
 def create_slug(text: str) -> str:
     """
     Create a URL-friendly slug from text.
-    
+
     Args:
         text: Text to convert to slug
-        
+
     Returns:
         str: URL-friendly slug
     """
