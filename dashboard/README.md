@@ -43,7 +43,7 @@ cp .env.local.example .env.local
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=public-anon-key
+NEXT_PUBLIC_SUPABASE_KEY=public-anon-key
 ```
 
 2. (Optional) For CI / container deploys you may also add
