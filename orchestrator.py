@@ -40,6 +40,8 @@ NEXT_AGENT_MAP = {
     "draft-assembly-agent": "image-generator-agent",
     "image-generator-agent": "wordpress-publisher-agent",
     "wordpress-publisher-agent": None,
+    # Site bootstrap is a terminal action for now
+    "site-scaffold-agent": None,
 }
 
 
@@ -189,6 +191,39 @@ def run_research_agent(content_id, supabase_client, use_ai=False):
         args.append("--no-ai")
 
     success, _ = run_agent_subprocess("research_agent.py", args)
+    return success
+
+
+# --------------------------------------------------------------------------- #
+# Site-Scaffold Agent                                                         #
+# --------------------------------------------------------------------------- #
+
+
+def run_site_scaffold_agent(site_id: str, supabase_client, use_ai: bool = True) -> bool:
+    """
+    Run the WordPress Site-Scaffold agent for a given WordPress site record.
+
+    The agent is responsible for:
+        • Installing/activating default plugins
+        • Creating EEAT pages (About, Contact, Privacy, Terms, Author, Sitemap)
+        • Creating default categories
+        • Generating 1 pillar + 5 supporting posts per category
+
+    Args:
+        site_id (str): UUID of the wordpress_sites row.
+        supabase_client: Supabase client (not used by wrapper, passed for interface parity).
+        use_ai (bool): Whether downstream agents should call OpenAI (kept for parity).
+
+    Returns:
+        bool: True on success, False on failure.
+    """
+    print(f"{BLUE}Running site scaffold agent for WordPress site: {site_id}{ENDC}")
+
+    args = ["--site-id", site_id]
+    if not use_ai:
+        args.append("--no-ai")
+
+    success, _ = run_agent_subprocess("site_scaffold_agent.py", args)
     return success
 
 
@@ -344,6 +379,7 @@ AGENT_FUNCTIONS = {
     "draft-assembly-agent": run_draft_assembly_agent,
     "image-generator-agent": run_image_generator_agent,
     "wordpress-publisher-agent": run_wordpress_publisher_agent,
+    "site-scaffold-agent": run_site_scaffold_agent,
 }
 
 
