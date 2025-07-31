@@ -2,7 +2,7 @@
 
 An autonomous, agent-based system that plans, writes, edits, illustrates and publishes long-form, SEO-optimised articles directly to WordPress.
 
-> **Status:** Sprint 0 (scaffolding) – core structure finished, **OpenAI integration added**, first three production-ready agents (`enhanced_seo_agent.py`, `research_agent.py`, `draft_writer_agent.py`) & new orchestrator pipeline operational.
+> **Status:** Sprint 2 in progress – `site_scaffold_agent` ready and orchestrator auto‑run loop implemented.
 
 ---
 
@@ -57,6 +57,8 @@ Agents talk **only** through the database, never directly to each other.
 │   └── enhanced_seo_agent.py # AI-powered keyword & content ideation
 │   └── research_agent.py     # gathers citations & facts
 │   └── draft_writer_agent.py # turns research + keywords into full drafts
+│   └── headline-agent/       # generates and scores article titles
+│   └── site_scaffold_agent/  # scaffolds WordPress site structure
 ├── docs/                    # PRD, roadmap, sprint docs
 ├── tests/                   # pytest suites
 ├── supabase_schema.sql      # full DDL export
@@ -116,6 +118,11 @@ OPENAI_API_KEY
 WP_API_URL, WP_USERNAME, WP_APP_PASSWORD
 POCKETFLOW_API_URL, POCKETFLOW_API_KEY
 ```
+Optional dev flag:
+```
+NEXT_PUBLIC_DEV_AUTH_BYPASS
+```
+Set to `true` to bypass dashboard authentication during local development.
 Put secrets in `.env`; it’s ignored by Git.
 
 ---
@@ -160,6 +167,7 @@ The runner:
 ### Inside code
 ```python
 from agents.seo_agent import run
+
 result = run({"domain": "fitness-blog.com", "niche": "weight training"})
 ```
 

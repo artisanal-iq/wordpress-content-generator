@@ -22,6 +22,7 @@ from orchestrator import (
     run_draft_writer_agent,
     run_flow_editor_agent,
     run_line_editor_agent,
+    run_draft_assembly_agent,
     run_image_generator_agent,
     run_wordpress_publisher_agent,  # Added this import
     process_content_piece,
@@ -84,11 +85,11 @@ class TestContentPipeline(unittest.TestCase):
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
-    @patch("orchestrator.subprocess.run")
-    def test_run_seo_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+    @patch("orchestrator.run_agent_subprocess")
+    def test_run_seo_agent(self, mock_run_agent, mock_get_supabase, mock_print):
         """Test running the SEO agent."""
         # Mock subprocess
-        mock_subprocess.return_value.returncode = 0
+        mock_run_agent.return_value = (True, "")
         
         # Mock Supabase client
         mock_supabase = MagicMock()
@@ -98,123 +99,126 @@ class TestContentPipeline(unittest.TestCase):
         result = run_seo_agent(self.mock_plan_id, mock_supabase)
         
         # Verify the agent was run
-        mock_subprocess.assert_called_once()
-        self.assertIn("enhanced_seo_agent.py", mock_subprocess.call_args[0][0][1])
-        self.assertIn("--plan-id", mock_subprocess.call_args[0][0][2])
-        self.assertIn(self.mock_plan_id, mock_subprocess.call_args[0][0][3])
+        mock_run_agent.assert_called_once_with(
+            "enhanced_seo_agent.py",
+            ["--plan-id", self.mock_plan_id],
+        )
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
-    @patch("orchestrator.subprocess.run")
-    def test_run_research_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+    @patch("orchestrator.run_agent_subprocess")
+    def test_run_research_agent(self, mock_run_agent, mock_get_supabase, mock_print):
         """Test running the research agent."""
         # Mock subprocess
-        mock_subprocess.return_value.returncode = 0
+        mock_run_agent.return_value = (True, "")
         
         # Call the function
         result = run_research_agent(self.mock_content_id, MagicMock())
         
         # Verify the agent was run
-        mock_subprocess.assert_called_once()
-        self.assertIn("research_agent.py", mock_subprocess.call_args[0][0][1])
-        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
-        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
+        mock_run_agent.assert_called_once_with(
+            "research_agent.py",
+            ["--content-id", self.mock_content_id],
+        )
         self.assertTrue(result)
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
-    @patch("orchestrator.subprocess.run")
-    def test_run_image_generator_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+    @patch("orchestrator.run_agent_subprocess")
+    def test_run_image_generator_agent(self, mock_run_agent, mock_get_supabase, mock_print):
         """Test running the image generator agent."""
         # Mock subprocess
-        mock_subprocess.return_value.returncode = 0
+        mock_run_agent.return_value = (True, "")
 
         # Call the function
         result = run_image_generator_agent(self.mock_content_id, MagicMock())
 
         # Verify the agent was run
-        mock_subprocess.assert_called_once()
-        self.assertIn("image_generator_agent.py", mock_subprocess.call_args[0][0][1])
-        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
-        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
+        mock_run_agent.assert_called_once_with(
+            "image_generator_agent.py",
+            ["--content-id", self.mock_content_id],
+        )
         self.assertTrue(result)
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
-    @patch("orchestrator.subprocess.run")
-    def test_run_wordpress_publisher_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+    @patch("orchestrator.run_agent_subprocess")
+    def test_run_wordpress_publisher_agent(self, mock_run_agent, mock_get_supabase, mock_print):
         """Test running the WordPress publisher agent."""
         # Mock subprocess
-        mock_subprocess.return_value.returncode = 0
+        mock_run_agent.return_value = (True, "")
         
         # Call the function
         result = run_wordpress_publisher_agent(self.mock_content_id, MagicMock())
         
         # Verify the agent was run
-        mock_subprocess.assert_called_once()
-        self.assertIn("wordpress_publisher_agent.py", mock_subprocess.call_args[0][0][1])
-        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
-        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
+        mock_run_agent.assert_called_once_with(
+            "wordpress_publisher_agent.py",
+            ["--content-id", self.mock_content_id],
+        )
         self.assertTrue(result)
         
         # Test with preview flag
-        mock_subprocess.reset_mock()
+        mock_run_agent.reset_mock()
         result = run_wordpress_publisher_agent(self.mock_content_id, MagicMock(), preview=True)
-        self.assertIn("--preview", mock_subprocess.call_args[0][0])
+        mock_run_agent.assert_called_with(
+            "wordpress_publisher_agent.py",
+            ["--content-id", self.mock_content_id, "--preview"],
+        )
         self.assertTrue(result)
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
-    @patch("orchestrator.subprocess.run")
-    def test_run_draft_writer_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+    @patch("orchestrator.run_agent_subprocess")
+    def test_run_draft_writer_agent(self, mock_run_agent, mock_get_supabase, mock_print):
         """Test running the draft writer agent."""
         # Mock subprocess
-        mock_subprocess.return_value.returncode = 0
+        mock_run_agent.return_value = (True, "")
         
         # Call the function
         result = run_draft_writer_agent(self.mock_content_id, MagicMock())
         
         # Verify the agent was run
-        mock_subprocess.assert_called_once()
-        self.assertIn("draft_writer_agent.py", mock_subprocess.call_args[0][0][1])
-        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
-        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
+        mock_run_agent.assert_called_once_with(
+            "draft_writer_agent.py",
+            ["--content-id", self.mock_content_id],
+        )
         self.assertTrue(result)
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
-    @patch("orchestrator.subprocess.run")
-    def test_run_flow_editor_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+    @patch("orchestrator.run_agent_subprocess")
+    def test_run_flow_editor_agent(self, mock_run_agent, mock_get_supabase, mock_print):
         """Test running the flow editor agent."""
         # Mock subprocess
-        mock_subprocess.return_value.returncode = 0
+        mock_run_agent.return_value = (True, "")
         
         # Call the function
         result = run_flow_editor_agent(self.mock_content_id, MagicMock())
         
         # Verify the agent was run
-        mock_subprocess.assert_called_once()
-        self.assertIn("flow_editor_agent.py", mock_subprocess.call_args[0][0][1])
-        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
-        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
+        mock_run_agent.assert_called_once_with(
+            "flow_editor_agent.py",
+            ["--content-id", self.mock_content_id],
+        )
         self.assertTrue(result)
 
     @patch("builtins.print")
     @patch("orchestrator.get_supabase_client")
-    @patch("orchestrator.subprocess.run")
-    def test_run_line_editor_agent(self, mock_subprocess, mock_get_supabase, mock_print):
+    @patch("orchestrator.run_agent_subprocess")
+    def test_run_line_editor_agent(self, mock_run_agent, mock_get_supabase, mock_print):
         """Test running the line editor agent."""
         # Mock subprocess
-        mock_subprocess.return_value.returncode = 0
+        mock_run_agent.return_value = (True, "")
 
         # Call the function
         result = run_line_editor_agent(self.mock_content_id, MagicMock())
 
         # Verify the agent was run
-        mock_subprocess.assert_called_once()
-        self.assertIn("line_editor_agent.py", mock_subprocess.call_args[0][0][1])
-        self.assertIn("--content-id", mock_subprocess.call_args[0][0][2])
-        self.assertIn(self.mock_content_id, mock_subprocess.call_args[0][0][3])
+        mock_run_agent.assert_called_once_with(
+            "line_editor_agent.py",
+            ["--content-id", self.mock_content_id],
+        )
         self.assertTrue(result)
 
     @patch("builtins.print")
@@ -222,9 +226,11 @@ class TestContentPipeline(unittest.TestCase):
     @patch("orchestrator.run_draft_writer_agent")
     @patch("orchestrator.run_flow_editor_agent")
     @patch("orchestrator.run_line_editor_agent")
+    @patch("orchestrator.run_draft_assembly_agent")
     @patch("orchestrator.run_image_generator_agent")
     @patch("orchestrator.run_wordpress_publisher_agent")
-    def test_process_content_piece(self, mock_wordpress_publisher, mock_image_gen, mock_line_editor, mock_flow_editor,
+    def test_process_content_piece(self, mock_wordpress_publisher, mock_image_gen, mock_draft_assembly,
+                                   mock_line_editor, mock_flow_editor,
                                    mock_draft_writer, mock_research, mock_print):
         """Test processing a content piece through the pipeline."""
         # Mock agent results
@@ -241,6 +247,7 @@ class TestContentPipeline(unittest.TestCase):
         content_piece_written = {**self.mock_content_piece, "status": "written"}
         content_piece_flow = {**self.mock_content_piece, "status": "flow_edited"}
         content_piece_line = {**self.mock_content_piece, "status": "line_edited"}
+        content_piece_assembled = {**self.mock_content_piece, "status": "assembled"}
         content_piece_image = {**self.mock_content_piece, "status": "image_generated"}
         
         # Test processing a draft content piece
@@ -281,17 +288,26 @@ class TestContentPipeline(unittest.TestCase):
         
         # Reset mocks
         mock_line_editor.reset_mock()
-        mock_image_gen.reset_mock()
+        mock_draft_assembly.reset_mock()
         
         # Test processing a line_edited content piece
         result_line = process_content_piece(content_piece_line, MagicMock())
-        mock_image_gen.assert_called_once_with(self.mock_content_id, MagicMock(), True)
+        mock_draft_assembly.assert_called_once_with(self.mock_content_id, MagicMock(), True)
         self.assertTrue(result_line)
-        
+
+        # Reset mocks
+        mock_draft_assembly.reset_mock()
+        mock_image_gen.reset_mock()
+
+        # Test processing an assembled content piece
+        result_assembled = process_content_piece(content_piece_assembled, MagicMock())
+        mock_image_gen.assert_called_once_with(self.mock_content_id, MagicMock(), True)
+        self.assertTrue(result_assembled)
+
         # Reset mocks
         mock_image_gen.reset_mock()
         mock_wordpress_publisher.reset_mock()
-        
+
         # Test processing an image_generated content piece
         result_image = process_content_piece(content_piece_image, MagicMock())
         mock_wordpress_publisher.assert_called_once_with(self.mock_content_id, MagicMock(), True, False)
@@ -336,6 +352,7 @@ class TestContentPipeline(unittest.TestCase):
     @patch("builtins.print")  # silence orchestrator prints
     @patch("orchestrator.run_wordpress_publisher_agent")
     @patch("orchestrator.run_line_editor_agent")
+    @patch("orchestrator.run_draft_assembly_agent")
     @patch("orchestrator.run_image_generator_agent")
     @patch("orchestrator.run_flow_editor_agent")
     @patch("orchestrator.run_draft_writer_agent")
@@ -350,6 +367,7 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_draft,
         mock_run_flow,
         mock_run_line,
+        mock_run_assemble,
         mock_run_image,
         mock_run_publisher,
         mock_print,
@@ -390,6 +408,7 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_draft.side_effect = _record("draft")
         mock_run_flow.side_effect = _record("flow")
         mock_run_line.side_effect = _record("line")
+        mock_run_assemble.side_effect = _record("assemble")
         mock_run_image.side_effect = _record("image")
         mock_run_publisher.side_effect = _record("publish")
 
@@ -417,11 +436,12 @@ class TestContentPipeline(unittest.TestCase):
         mock_run_draft.assert_called_once()
         mock_run_flow.assert_called_once()
         mock_run_line.assert_called_once()
+        mock_run_assemble.assert_called_once()
         mock_run_image.assert_called_once()
         mock_run_publisher.assert_called_once()
 
-        # Order: seo -> research -> draft -> flow -> line -> image -> publish
-        self.assertEqual(call_order, ["seo", "research", "draft", "flow", "line", "image", "publish"])
+        # Order: seo -> research -> draft -> flow -> line -> assemble -> image -> publish
+        self.assertEqual(call_order, ["seo", "research", "draft", "flow", "line", "assemble", "image", "publish"])
 
 
 if __name__ == "__main__":

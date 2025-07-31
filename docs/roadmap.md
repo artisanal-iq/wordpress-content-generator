@@ -18,8 +18,8 @@
 * [ ] Define Supabase tables (`strategic_plans`, `keywords`, `content_pieces`, etc.)
 * [ ] Deploy Vercel frontend with login + basic dashboard
 * [ ] Deploy Pocketbase with simple Orchestrator UI
-* [ ] Build `Agent Interface` pattern and task queue logic
-* [ ] Stub manual task input + trigger next-agent workflows
+* [x] Build `Agent Interface` pattern and task queue logic
+* [x] Stub manual task input + trigger next-agent workflows
 
 ---
 
@@ -54,7 +54,7 @@
 * [x] Build **Line Editor Agent** (clarity, grammar, voice)
 * [ ] Build **Headline Agent** (evaluate clickability, SEO)
 * [ ] Enable draft assembly (merge output from agents)
-* [ ] Add export-ready formatting: WordPress-compatible markdown or HTML
+* [x] Add export-ready formatting: WordPress-compatible markdown or HTML
 
 ---
 
