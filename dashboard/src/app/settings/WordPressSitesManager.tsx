@@ -9,7 +9,7 @@ import {
   FiAlertCircle,
   FiGlobe,
   FiSave,
-  FiZap
+  FiZap,
   FiLink
 } from 'react-icons/fi';
 import supabase from '@/lib/supabase';
