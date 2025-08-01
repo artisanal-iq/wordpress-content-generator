@@ -9,9 +9,11 @@ import {
   FiAlertCircle,
   FiGlobe,
   FiSave,
+  FiZap
   FiLink
 } from 'react-icons/fi';
 import supabase from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';
 
 // Define types for WordPress sites
@@ -23,6 +25,7 @@ type WordPressSite = {
   app_password: string;
   created_at: string;
   updated_at: string | null;
+  scaffold_status?: string;
 };
 
 // Form data type
@@ -53,6 +56,7 @@ export default function WordPressSitesManager() {
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
   const [testingConnection, setTestingConnection] = useState<string | null>(null);
+  const [bootstrappingSite, setBootstrappingSite] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -267,6 +271,38 @@ export default function WordPressSitesManager() {
     }
   };
 
+  // Bootstrap (scaffold) WordPress site
+  const bootstrapSite = async (site: WordPressSite) => {
+    try {
+      setBootstrappingSite(site.id);
+      const now = new Date().toISOString();
+      const taskId = uuidv4();
+
+      // Insert agent task row
+      const { error } = await supabase.from('agent_status').insert({
+        id: taskId,
+        content_id: site.id,
+        agent: 'site-scaffold-agent',
+        status: 'queued',
+        input: {},
+        created_at: now
+      });
+
+      if (error) throw new Error(error.message);
+
+      toast.success(`Bootstrap queued for ${site.domain}`);
+      // Optionally update site status here if backend trigger not present
+      fetchWordPressSites();
+    } catch (err) {
+      console.error('Error bootstrapping site:', err);
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to queue bootstrap task'
+      );
+    } finally {
+      setBootstrappingSite(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -475,6 +511,21 @@ export default function WordPressSitesManager() {
                             <FiCheck size={18} />
                           )}
                         </button>
+                        {(site.scaffold_status !== 'in_progress' &&
+                          site.scaffold_status !== 'done') && (
+                          <button
+                            onClick={() => bootstrapSite(site)}
+                            disabled={bootstrappingSite === site.id}
+                            className="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
+                            title="Bootstrap Site"
+                          >
+                            {bootstrappingSite === site.id ? (
+                              <FiRefreshCw className="animate-spin" size={18} />
+                            ) : (
+                              <FiZap size={18} />
+                            )}
+                          </button>
+                        )}
                         <button
                           onClick={() => startEdit(site)}
                           className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
